@@ -61,13 +61,13 @@
 <div class="row g-3">
     {% for day in date_days %}
         <div class="{% if view_type == 'day' %}col-12{% else %}col-lg col-md-4 col-sm-6{% endif %}">
-            <div class="card shadow-sm h-100 {% if day == now.date %}border-primary border-2{% endif %}">
-                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center {% if day == now.date %}bg-primary-subtle text-primary fw-bold{% endif %}">
+            <div class="card shadow-sm h-100 {% if day == today %}border-primary border-2{% endif %}">
+                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center {% if day == today %}bg-primary-subtle text-primary fw-bold{% endif %}">
                     <div>
                         <span class="fw-bold d-block">{{ day|date:"l" }}</span>
                         <small class="text-muted">{{ day|date:"M d, Y" }}</small>
                     </div>
-                    {% if day == now.date %}
+                    {% if day == today %}
                         <span class="badge bg-primary">Today</span>
                     {% endif %}
                 </div>

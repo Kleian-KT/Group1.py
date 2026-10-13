@@ -298,3 +298,47 @@ class ReservationValidationAndWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 404)
         r.refresh_from_db()
         self.assertEqual(r.status, Reservation.STATUS_PENDING) # Untouched!
+
+    def test_reservation_submission_form_validation(self):
+        """ReservationSubmissionForm must be invalid if end_time <= start_time."""
+        from reservations.forms import ReservationSubmissionForm
+        s = self.base_time.replace(hour=14, minute=0)
+        e = self.base_time.replace(hour=13, minute=0) # end before start
+        form = ReservationSubmissionForm(data={
+            'facility': self.facility.id,
+            'title': 'Test Title',
+            'purpose': 'Test Purpose',
+            'participant_count': 10,
+            'start_time': s.strftime('%Y-%m-%dT%H:%M'),
+            'end_time': e.strftime('%Y-%m-%dT%H:%M'),
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn('end_time', form.errors)
+
+    def test_reservation_reschedule_form_validation(self):
+        """ReservationRescheduleForm must be invalid if new_end_time <= new_start_time."""
+        from reservations.forms import ReservationRescheduleForm
+        s = self.base_time.replace(hour=14, minute=0)
+        e = self.base_time.replace(hour=13, minute=0)
+        form = ReservationRescheduleForm(data={
+            'new_start_time': s.strftime('%Y-%m-%dT%H:%M'),
+            'new_end_time': e.strftime('%Y-%m-%dT%H:%M'),
+            'reason': 'Adjust schedule',
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn('new_end_time', form.errors)
+
+    def test_closure_block_form_validation(self):
+        """ClosureBlockForm must be invalid if end_time <= start_time."""
+        from reservations.forms import ClosureBlockForm
+        s = self.base_time.replace(hour=14, minute=0)
+        e = self.base_time.replace(hour=13, minute=0)
+        form = ClosureBlockForm(data={
+            'facility': self.facility.id,
+            'start_time': s.strftime('%Y-%m-%dT%H:%M'),
+            'end_time': e.strftime('%Y-%m-%dT%H:%M'),
+            'reason': 'Maintenance',
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn('end_time', form.errors)
+

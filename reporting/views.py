@@ -66,7 +66,9 @@ def admin_reports(request):
 
     # Aggregated Summary Stats
     total_reservations = res_qs.count()
+    pending_count = res_qs.filter(status=Reservation.STATUS_PENDING).count()
     approved_count = res_qs.filter(status=Reservation.STATUS_APPROVED).count()
+    checked_in_count = res_qs.filter(status=Reservation.STATUS_CHECKED_IN).count()
     completed_count = res_qs.filter(status=Reservation.STATUS_COMPLETED).count()
     no_show_count = res_qs.filter(status=Reservation.STATUS_NO_SHOW).count()
     rejected_count = res_qs.filter(status=Reservation.STATUS_REJECTED).count()
@@ -111,7 +113,9 @@ def admin_reports(request):
         'facilities': facilities,
         'statuses': Reservation.STATUS_CHOICES,
         'total_reservations': total_reservations,
+        'pending_count': pending_count,
         'approved_count': approved_count,
+        'checked_in_count': checked_in_count,
         'completed_count': completed_count,
         'no_show_count': no_show_count,
         'rejected_count': rejected_count,

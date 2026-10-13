@@ -20,6 +20,14 @@ class ReservationSubmissionForm(forms.ModelForm):
             'end_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get('start_time')
+        end = cleaned_data.get('end_time')
+        if start and end and end <= start:
+            self.add_error('end_time', "Reservation end time must be strictly after start time.")
+        return cleaned_data
+
 
 class ReservationRejectForm(forms.Form):
     reason = forms.CharField(
@@ -46,6 +54,14 @@ class ReservationRescheduleForm(forms.Form):
         label="Rescheduling Reason"
     )
 
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get('new_start_time')
+        end = cleaned_data.get('new_end_time')
+        if start and end and end <= start:
+            self.add_error('new_end_time', "New end datetime must be strictly after start datetime.")
+        return cleaned_data
+
 
 class ReservationAdminCancelForm(forms.Form):
     reason = forms.CharField(
@@ -69,3 +85,11 @@ class ClosureBlockForm(forms.ModelForm):
             'end_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'e.g. Scheduled electrical maintenance and facility cleaning'}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get('start_time')
+        end = cleaned_data.get('end_time')
+        if start and end and end <= start:
+            self.add_error('end_time', "Closure end datetime must be strictly after start datetime.")
+        return cleaned_data

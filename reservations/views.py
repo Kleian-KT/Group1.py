@@ -367,6 +367,7 @@ def admin_calendar(request):
         'closures': closures_qs,
         'facilities': facilities,
         'facility_id': facility_id,
+        'today': now.date(),
         'active_menu': 'calendar'
     })
 

@@ -66,37 +66,49 @@
 
 <!-- Aggregated KPI Summary -->
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-2">
+    <div class="col-6 col-md-3">
         <div class="card p-3 text-center border-0 bg-light shadow-sm">
             <div class="small text-muted fw-semibold">Total Requests</div>
             <div class="fs-3 fw-bold text-dark">{{ total_reservations }}</div>
         </div>
     </div>
-    <div class="col-6 col-md-2">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 text-center border-0 bg-light shadow-sm">
+            <div class="small text-muted fw-semibold">Pending</div>
+            <div class="fs-3 fw-bold text-warning" style="color: #d97706 !important;">{{ pending_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
         <div class="card p-3 text-center border-0 bg-light shadow-sm">
             <div class="small text-muted fw-semibold">Approved</div>
             <div class="fs-3 fw-bold text-primary">{{ approved_count }}</div>
         </div>
     </div>
-    <div class="col-6 col-md-2">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 text-center border-0 bg-light shadow-sm">
+            <div class="small text-muted fw-semibold">Checked In</div>
+            <div class="fs-3 fw-bold text-info" style="color: #0284c7 !important;">{{ checked_in_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
         <div class="card p-3 text-center border-0 bg-light shadow-sm">
             <div class="small text-muted fw-semibold">Completed</div>
             <div class="fs-3 fw-bold text-success">{{ completed_count }}</div>
         </div>
     </div>
-    <div class="col-6 col-md-2">
+    <div class="col-6 col-md-3">
         <div class="card p-3 text-center border-0 bg-light shadow-sm">
             <div class="small text-muted fw-semibold">No Show</div>
-            <div class="fs-3 fw-bold text-purple" style="color: #6b21a8;">{{ no_show_count }}</div>
+            <div class="fs-3 fw-bold" style="color: #7c3aed;">{{ no_show_count }}</div>
         </div>
     </div>
-    <div class="col-6 col-md-2">
+    <div class="col-6 col-md-3">
         <div class="card p-3 text-center border-0 bg-light shadow-sm">
             <div class="small text-muted fw-semibold">Rejected</div>
             <div class="fs-3 fw-bold text-danger">{{ rejected_count }}</div>
         </div>
     </div>
-    <div class="col-6 col-md-2">
+    <div class="col-6 col-md-3">
         <div class="card p-3 text-center border-0 bg-light shadow-sm">
             <div class="small text-muted fw-semibold">Cancelled</div>
             <div class="fs-3 fw-bold text-secondary">{{ cancelled_count }}</div>

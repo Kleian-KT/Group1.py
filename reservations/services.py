@@ -1,7 +1,10 @@
 import datetime
+import threading
 from django.db import transaction, OperationalError, DatabaseError
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+
+_approval_concurrency_lock = threading.Lock()
 
 from facilities.models import Facility
 from reservations.models import Reservation, ClosureBlock, ReservationChange
@@ -182,78 +185,79 @@ def approve_reservation(reservation_id, admin_user, request=None):
     Atomically approves a PENDING reservation.
     Implements row locking and conflict revalidation to prevent race conditions.
     """
-    try:
-        with transaction.atomic():
-            # Lock reservation row
-            try:
-                reservation = Reservation.objects.select_for_update().get(id=reservation_id)
-            except Reservation.DoesNotExist:
-                raise ReservationWorkflowError("Reservation does not exist.")
+    with _approval_concurrency_lock:
+        try:
+            with transaction.atomic():
+                # Lock reservation row
+                try:
+                    reservation = Reservation.objects.select_for_update().get(id=reservation_id)
+                except Reservation.DoesNotExist:
+                    raise ReservationWorkflowError("Reservation does not exist.")
 
-            # Lock facility row to serialize concurrent approvals for the same facility
-            facility = Facility.objects.select_for_update().get(id=reservation.facility_id)
+                # Lock facility row to serialize concurrent approvals for the same facility
+                facility = Facility.objects.select_for_update().get(id=reservation.facility_id)
 
-            # 1. Verify status is still PENDING
-            if reservation.status != Reservation.STATUS_PENDING:
-                raise ReservationWorkflowError(
-                    f"Cannot approve reservation with status '{reservation.get_status_display()}'. Must be Pending."
+                # 1. Verify status is still PENDING
+                if reservation.status != Reservation.STATUS_PENDING:
+                    raise ReservationWorkflowError(
+                        f"Cannot approve reservation with status '{reservation.get_status_display()}'. Must be Pending."
+                    )
+
+                # 2. Confirm facility is active
+                if not facility.is_active:
+                    raise ReservationWorkflowError("Cannot approve reservation: Facility is inactive or archived.")
+
+                # 3. Capacity & rule revalidation
+                rule_errors = validate_reservation_times_and_rules(
+                    facility=facility,
+                    start_time=reservation.start_time,
+                    end_time=reservation.end_time,
+                    participant_count=reservation.participant_count,
+                    is_submission=False # Don't reject if start time is near
+                )
+                if rule_errors:
+                    raise ReservationWorkflowError("; ".join(rule_errors))
+
+                # 4. Check active closures
+                active_closures = get_overlapping_closures(facility, reservation.start_time, reservation.end_time)
+                if active_closures.exists():
+                    raise ReservationConflictError("Cannot approve: Requested slot overlaps an active closure period.")
+
+                # 5. Check overlapping APPROVED or CHECKED_IN reservations
+                overlapping = get_overlapping_approved_reservations(
+                    facility, reservation.start_time, reservation.end_time, exclude_reservation_id=reservation.id
+                )
+                if overlapping.exists():
+                    conflict_refs = [r.reference for r in overlapping]
+                    raise ReservationConflictError(
+                        f"Conflict detected: Overlaps with approved reservation(s): {', '.join(conflict_refs)}",
+                        conflicts=list(overlapping)
+                    )
+
+                # Update reservation status to APPROVED
+                reservation.status = Reservation.STATUS_APPROVED
+                reservation.decision_by = admin_user
+                reservation.decision_at = timezone.now()
+                reservation.save(update_fields=['status', 'decision_by', 'decision_at', 'updated_at'])
+
+                # Ensure EventRecord is initialized
+                EventRecord.objects.get_or_create(reservation=reservation)
+
+                log_audit(
+                    request=request,
+                    action='RESERVATION_APPROVED',
+                    target_type='Reservation',
+                    target_id=str(reservation.id),
+                    target_reference=reservation.reference,
+                    details=f"Reservation approved by {admin_user.username}"
                 )
 
-            # 2. Confirm facility is active
-            if not facility.is_active:
-                raise ReservationWorkflowError("Cannot approve reservation: Facility is inactive or archived.")
-
-            # 3. Capacity & rule revalidation
-            rule_errors = validate_reservation_times_and_rules(
-                facility=facility,
-                start_time=reservation.start_time,
-                end_time=reservation.end_time,
-                participant_count=reservation.participant_count,
-                is_submission=False # Don't reject if start time is near
-            )
-            if rule_errors:
-                raise ReservationWorkflowError("; ".join(rule_errors))
-
-            # 4. Check active closures
-            active_closures = get_overlapping_closures(facility, reservation.start_time, reservation.end_time)
-            if active_closures.exists():
-                raise ReservationConflictError("Cannot approve: Requested slot overlaps an active closure period.")
-
-            # 5. Check overlapping APPROVED or CHECKED_IN reservations
-            overlapping = get_overlapping_approved_reservations(
-                facility, reservation.start_time, reservation.end_time, exclude_reservation_id=reservation.id
-            )
-            if overlapping.exists():
-                conflict_refs = [r.reference for r in overlapping]
-                raise ReservationConflictError(
-                    f"Conflict detected: Overlaps with approved reservation(s): {', '.join(conflict_refs)}",
-                    conflicts=list(overlapping)
-                )
-
-            # Update reservation status to APPROVED
-            reservation.status = Reservation.STATUS_APPROVED
-            reservation.decision_by = admin_user
-            reservation.decision_at = timezone.now()
-            reservation.save(update_fields=['status', 'decision_by', 'decision_at', 'updated_at'])
-
-            # Ensure EventRecord is initialized
-            EventRecord.objects.get_or_create(reservation=reservation)
-
-            log_audit(
-                request=request,
-                action='RESERVATION_APPROVED',
-                target_type='Reservation',
-                target_id=str(reservation.id),
-                target_reference=reservation.reference,
-                details=f"Reservation approved by {admin_user.username}"
-            )
-
-            return reservation
-    except (OperationalError, DatabaseError) as e:
-        raise ReservationConflictError(
-            "Concurrency conflict: The database locked this facility for a concurrent approval transaction. Please retry.",
-            conflicts=[]
-        ) from e
+                return reservation
+        except (OperationalError, DatabaseError) as e:
+            raise ReservationConflictError(
+                "Concurrency conflict: The database locked this facility for a concurrent approval transaction. Please retry.",
+                conflicts=[]
+            ) from e
 
 
 def reject_reservation(reservation_id, admin_user, reason, request=None):
@@ -300,69 +304,70 @@ def reschedule_approved_reservation(reservation_id, new_start_time, new_end_time
     if not reason or not reason.strip():
         raise ValidationError("Rescheduling reason is required.")
 
-    with transaction.atomic():
-        try:
-            reservation = Reservation.objects.select_for_update().get(id=reservation_id)
-        except Reservation.DoesNotExist:
-            raise ReservationWorkflowError("Reservation does not exist.")
+    with _approval_concurrency_lock:
+        with transaction.atomic():
+            try:
+                reservation = Reservation.objects.select_for_update().get(id=reservation_id)
+            except Reservation.DoesNotExist:
+                raise ReservationWorkflowError("Reservation does not exist.")
 
-        facility = Facility.objects.select_for_update().get(id=reservation.facility_id)
+            facility = Facility.objects.select_for_update().get(id=reservation.facility_id)
 
-        if reservation.status != Reservation.STATUS_APPROVED:
-            raise ReservationWorkflowError("Only Approved reservations may be rescheduled.")
+            if reservation.status != Reservation.STATUS_APPROVED:
+                raise ReservationWorkflowError("Only Approved reservations may be rescheduled.")
 
-        # Revalidate with new times
-        errors = validate_reservation_times_and_rules(
-            facility=facility,
-            start_time=new_start_time,
-            end_time=new_end_time,
-            participant_count=reservation.participant_count,
-            is_submission=False
-        )
-        if errors:
-            raise ValidationError(errors)
+            # Revalidate with new times
+            errors = validate_reservation_times_and_rules(
+                facility=facility,
+                start_time=new_start_time,
+                end_time=new_end_time,
+                participant_count=reservation.participant_count,
+                is_submission=False
+            )
+            if errors:
+                raise ValidationError(errors)
 
-        # Check closures for new times
-        closures = get_overlapping_closures(facility, new_start_time, new_end_time)
-        if closures.exists():
-            raise ReservationConflictError("New schedule overlaps with an active facility closure.")
+            # Check closures for new times
+            closures = get_overlapping_closures(facility, new_start_time, new_end_time)
+            if closures.exists():
+                raise ReservationConflictError("New schedule overlaps with an active facility closure.")
 
-        # Check conflicts with other approved bookings
-        conflicts = get_overlapping_approved_reservations(
-            facility, new_start_time, new_end_time, exclude_reservation_id=reservation.id
-        )
-        if conflicts.exists():
-            raise ReservationConflictError("New schedule conflicts with an existing approved reservation.")
+            # Check conflicts with other approved bookings
+            conflicts = get_overlapping_approved_reservations(
+                facility, new_start_time, new_end_time, exclude_reservation_id=reservation.id
+            )
+            if conflicts.exists():
+                raise ReservationConflictError("New schedule conflicts with an existing approved reservation.")
 
-        # Record ReservationChange
-        ReservationChange.objects.create(
-            reservation=reservation,
-            previous_start_time=reservation.start_time,
-            previous_end_time=reservation.end_time,
-            new_start_time=new_start_time,
-            new_end_time=new_end_time,
-            reason=reason.strip(),
-            changed_by=admin_user
-        )
+            # Record ReservationChange
+            ReservationChange.objects.create(
+                reservation=reservation,
+                previous_start_time=reservation.start_time,
+                previous_end_time=reservation.end_time,
+                new_start_time=new_start_time,
+                new_end_time=new_end_time,
+                reason=reason.strip(),
+                changed_by=admin_user
+            )
 
-        # Update reservation times
-        old_start = reservation.start_time
-        old_end = reservation.end_time
-        reservation.start_time = new_start_time
-        reservation.end_time = new_end_time
-        reservation.save(update_fields=['start_time', 'end_time', 'updated_at'])
+            # Update reservation times
+            old_start = reservation.start_time
+            old_end = reservation.end_time
+            reservation.start_time = new_start_time
+            reservation.end_time = new_end_time
+            reservation.save(update_fields=['start_time', 'end_time', 'updated_at'])
 
-        log_audit(
-            request=request,
-            action='RESERVATION_RESCHEDULED',
-            target_type='Reservation',
-            target_id=str(reservation.id),
-            target_reference=reservation.reference,
-            details=(f"Rescheduled by {admin_user.username}. From {old_start.strftime('%Y-%m-%d %H:%M')}-{old_end.strftime('%H:%M')} "
-                     f"to {new_start_time.strftime('%Y-%m-%d %H:%M')}-{new_end_time.strftime('%H:%M')}. Reason: {reason.strip()}")
-        )
+            log_audit(
+                request=request,
+                action='RESERVATION_RESCHEDULED',
+                target_type='Reservation',
+                target_id=str(reservation.id),
+                target_reference=reservation.reference,
+                details=(f"Rescheduled by {admin_user.username}. From {old_start.strftime('%Y-%m-%d %H:%M')}-{old_end.strftime('%H:%M')} "
+                         f"to {new_start_time.strftime('%Y-%m-%d %H:%M')}-{new_end_time.strftime('%H:%M')}. Reason: {reason.strip()}")
+            )
 
-        return reservation
+            return reservation
 
 
 def cancel_reservation_by_user(reservation_id, user, request=None):

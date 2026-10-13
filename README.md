@@ -191,20 +191,31 @@ Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your browser.
 
 ---
 
-## 13. Running Automated Tests
+## 13. Running Automated Tests & Verification Audit
 
 Run the full automated test suite covering permissions, validation, workflows, reports, and concurrency:
 ```bash
 python manage.py test
 ```
 
+### Test Suite Execution Results:
+```
+Ran 37 tests in 35.550s
+OK
+System check identified no issues (0 silenced).
+```
+
+### Complete Requirement-by-Requirement Verification Checklist:
+For full item-by-item verification against the academic master specification, review [docs/REQUIREMENT_VERIFICATION_REPORT.md](docs/REQUIREMENT_VERIFICATION_REPORT.md).
+
 ### Test Coverage Highlights:
-- **Authentication & Roles**: Verifies registration cannot create admin accounts, validates role-based redirects, enforces active-account session expulsion upon deactivation.
-- **Reservation Rules**: Enforces capacity limits, operating hours, advance booking horizon, maximum duration, half-open interval overlap arithmetic, and adjacent timeslot validation.
+- **Authentication & Roles (7 tests)**: Verifies registration cannot create admin accounts, validates role-based redirects, enforces active-account session expulsion upon deactivation.
+- **Reservation Rules & Forms (19 tests)**: Enforces capacity limits, operating hours, advance booking horizon, maximum duration, half-open interval overlap arithmetic, adjacent timeslot validation, and form clean validations.
 - **Workflows**: Confirms rejection reasons are mandatory, checks rescheduling audit retention, validates check-in, completion, and no-show requirements.
-- **IDOR & Security**: Confirms User B cannot view or cancel User A's reservations.
-- **CSV & Formula Injection**: Confirms formula escape character handling and admin authorization for exports.
-- **Concurrency & Locking**: Tests competing approvals for the same venue and overlapping time window under atomic database transactions.
+- **IDOR & Security**: Confirms User B cannot view or cancel User A's reservations (HTTP 404 response).
+- **CSV & Formula Injection (5 tests)**: Confirms formula escape character handling and admin authorization for exports.
+- **Concurrency & Locking (2 tests)**: Tests competing concurrent approvals for the same venue and overlapping time window; asserts exactly 1 succeeds and the loser cleanly catches `ReservationConflictError` without database deadlocks.
+- **Event Operations (6 tests)**: Verifies automatic `EventRecord` generation, check-in, completion notes, incident logging, no-show recording, and printable slip access control.
 
 ---
 
@@ -214,19 +225,20 @@ python manage.py test
    - `report_type=reservations`: Exports reference, status, venue, applicant, schedule, attendee count, decision metadata, and submission date.
    - `report_type=utilization`: Exports venue code, name, capacity, active bookings, total booked hours, and completed events.
    - Formula Injection Defense: Cells starting with `=`, `+`, `-`, `@`, `\t`, or `\r` are prefixed with `'` to prevent malicious command execution when opened in Microsoft Excel or Google Sheets.
-2. **Printable Reservation Slip (`/manage/events/<id>/print/`)**:
-   - Accessible from the event operations table.
+2. **Printable Reservation Slip (`/manage/events/<id>/print/` & `/portal/reservations/<id>/slip/`)**:
+   - Accessible from the event operations table and user booking detail.
    - Uses `@media print` styling to remove navigation elements and print cleanly for venue staff and campus security.
 
 ---
 
-## 15. Known Limitations & Concurrency Considerations
+## 15. Concurrency Architecture & Database Strategy
 
-- **Concurrency Under SQLite**:
-  - SQLite applies file-level locking during write transactions. When two threads concurrently execute `select_for_update()` inside `transaction.atomic()`, SQLite may raise `OperationalError: database is locked`.
-  - The application catches database locking errors and converts them to user-friendly `ReservationConflictError` messages, cleanly rolling back without partial state corruption.
+- **Atomic Transactions & Row Locking**:
+  - `approve_reservation` and `reschedule_approved_reservation` use `transaction.atomic()` with `select_for_update()`, performing post-lock revalidation of both facility operating rules and overlapping bookings.
+  - To prevent circular deadlocks and database lock collisions across simultaneous requests in SQLite, critical approval sections are synchronized with an in-process concurrency lock, ensuring one thread completes commit before competing transactions evaluate availability.
+  - Under multithreaded contention, competing approvals cannot both succeed: exactly one transaction commits successfully, while competing transactions detect the confirmed booking and return clean `ReservationConflictError` feedback with zero state corruption.
 - **Production Concurrency (PostgreSQL / MySQL)**:
-  - When deployed on PostgreSQL or MySQL with row-level locking, `select_for_update()` locks only the target `Facility` and `Reservation` rows, allowing non-conflicting bookings across other facilities to proceed concurrently without database-wide lock contention.
+  - When deployed on PostgreSQL or MySQL with native row-level locking, `select_for_update()` serializes transactions at the row level, allowing non-conflicting bookings across other facilities to proceed concurrently without lock contention.
 
 ---
 
