@@ -1,0 +1,154 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}User Management - Campus Admin{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block page_subtitle %}Review campus user accounts, monitor activity, and manage access states{% endblock %}
+
+{% block admin_content %}
+<!-- Search & Filter Panel -->
+<div class="filter-bar">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label small fw-semibold text-muted">Search Accounts</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by name, username, email, ID, or department...">
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Filter by Role</label>
+            <select name="role" class="form-select">
+                <option value="">All Roles</option>
+                <option value="BASIC_USER" {% if role_filter == 'BASIC_USER' %}selected{% endif %}>Basic User</option>
+                <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>Administrator</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-navy flex-grow-1">Filter</button>
+            {% if search_query or role_filter or status_filter %}
+                <a href="{% url 'admin_user_list' %}" class="btn btn-outline-secondary" title="Reset filters"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- User Accounts Table -->
+<div class="table-responsive table-custom shadow-sm mb-4">
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>User / Name</th>
+                <th>Contact Details</th>
+                <th>Department / ID</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined Date</th>
+                <th class="text-end">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in page_obj %}
+                <tr>
+                    <td>
+                        <div class="fw-bold text-dark">{{ u.display_name }}</div>
+                        <small class="text-muted">@{{ u.username }}</small>
+                    </td>
+                    <td>
+                        <div><i class="bi bi-envelope me-1 text-muted"></i>{{ u.email|default:"No email" }}</div>
+                        {% if u.phone_number %}
+                            <small class="text-muted"><i class="bi bi-telephone me-1"></i>{{ u.phone_number }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="text-dark">{{ u.department|default:"Unspecified" }}</div>
+                        {% if u.student_or_employee_id %}
+                            <small class="text-muted">ID: {{ u.student_or_employee_id }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.role == 'ADMIN' %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">ADMIN</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1">BASIC USER</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                <i class="bi bi-check-circle-fill me-1"></i> Active
+                            </span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                <i class="bi bi-x-circle-fill me-1"></i> Deactivated
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="small text-muted">{{ u.date_joined|date:"M d, Y" }}</span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'admin_user_detail' user_id=u.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye me-1"></i> Details
+                        </a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <i class="bi bi-people empty-state-icon"></i>
+                            <div class="empty-state-title">No User Accounts Found</div>
+                            <p class="empty-state-text">No user accounts matched the current search or filter criteria.</p>
+                            <a href="{% url 'admin_user_list' %}" class="btn btn-outline-secondary btn-sm">Clear Filters</a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination Controls -->
+{% if page_obj.has_other_pages %}
+    <nav aria-label="Users pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&role={{ role_filter }}&status={{ status_filter }}">Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&q={{ search_query }}&role={{ role_filter }}&status={{ status_filter }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&role={{ role_filter }}&status={{ status_filter }}">Next</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

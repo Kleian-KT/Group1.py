@@ -1,0 +1,209 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}Reports and Analytics - Campus Operations{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+{% block page_subtitle %}Database-backed reservation audit reporting, facility utilization calculations, and CSV exports{% endblock %}
+
+{% block page_actions %}
+<div class="dropdown">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-download me-1"></i> Export CSV
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow">
+        <li>
+            <a class="dropdown-item" href="{% url 'admin_reports_export_csv' %}?report_type=reservations&start_date={{ start_date }}&end_date={{ end_date }}&facility={{ facility_id }}&status={{ status_filter }}">
+                <i class="bi bi-file-earmark-spreadsheet me-2 text-primary"></i>Export Reservations Report
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="{% url 'admin_reports_export_csv' %}?report_type=utilization&start_date={{ start_date }}&end_date={{ end_date }}">
+                <i class="bi bi-bar-chart-steps me-2 text-info"></i>Export Facility Utilization Report
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<!-- Reporting Filter Bar -->
+<div class="filter-bar">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">From Date</label>
+            <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">To Date</label>
+            <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Facility</label>
+            <select name="facility" class="form-select">
+                <option value="">All Facilities</option>
+                {% for f in facilities %}
+                    <option value="{{ f.id }}" {% if facility_id == f.id|stringformat:"s" %}selected{% endif %}>{{ f.code }} - {{ f.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                {% for code, label in statuses %}
+                    <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-navy w-100" title="Apply Filters"><i class="bi bi-funnel"></i></button>
+        </div>
+    </form>
+</div>
+
+<!-- Aggregated KPI Summary -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <div class="card p-3 text-center border-0 bg-light shadow-sm">
+            <div class="small text-muted fw-semibold">Total Requests</div>
+            <div class="fs-3 fw-bold text-dark">{{ total_reservations }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card p-3 text-center border-0 bg-light shadow-sm">
+            <div class="small text-muted fw-semibold">Approved</div>
+            <div class="fs-3 fw-bold text-primary">{{ approved_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card p-3 text-center border-0 bg-light shadow-sm">
+            <div class="small text-muted fw-semibold">Completed</div>
+            <div class="fs-3 fw-bold text-success">{{ completed_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card p-3 text-center border-0 bg-light shadow-sm">
+            <div class="small text-muted fw-semibold">No Show</div>
+            <div class="fs-3 fw-bold text-purple" style="color: #6b21a8;">{{ no_show_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card p-3 text-center border-0 bg-light shadow-sm">
+            <div class="small text-muted fw-semibold">Rejected</div>
+            <div class="fs-3 fw-bold text-danger">{{ rejected_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card p-3 text-center border-0 bg-light shadow-sm">
+            <div class="small text-muted fw-semibold">Cancelled</div>
+            <div class="fs-3 fw-bold text-secondary">{{ cancelled_count }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 1: Facility Utilization Report -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-speedometer2 me-2 text-info"></i>Facility Utilization Analysis
+        </h5>
+        <span class="badge bg-light text-muted border">Calculated for {{ start_date }} &ndash; {{ end_date }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Facility</th>
+                        <th>Capacity</th>
+                        <th>Location</th>
+                        <th>Active Bookings</th>
+                        <th>Total Booked Hours</th>
+                        <th>Completed Events</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in utilization_data %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-dark">{{ u.facility.name }}</div>
+                                <span class="badge bg-light text-muted border font-monospace">{{ u.facility.code }}</span>
+                            </td>
+                            <td>{{ u.facility.capacity }} pax</td>
+                            <td><small class="text-muted">{{ u.facility.location }}</small></td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary px-3 py-1 fw-bold">{{ u.booking_count }}</span>
+                            </td>
+                            <td>
+                                <strong class="text-dark">{{ u.booked_hours }} hrs</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-success-subtle text-success px-3 py-1">{{ u.completed_events }}</span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">No facility records found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Detailed Reservations Report Table -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-table me-2 text-primary"></i>Reservations Audit Table
+        </h5>
+        <small class="text-muted">Displaying up to 100 matching entries</small>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Facility</th>
+                        <th>Applicant</th>
+                        <th>Event Title</th>
+                        <th>Schedule</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reservations_list %}
+                        <tr>
+                            <td><span class="fw-bold font-monospace text-primary">{{ r.reference }}</span></td>
+                            <td>{{ r.facility.name }}</td>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ r.user.display_name }}</div>
+                                <small class="text-muted">@{{ r.user.username }}</small>
+                            </td>
+                            <td>{{ r.title }}</td>
+                            <td>
+                                <div>{{ r.start_time|date:"M d, Y" }}</div>
+                                <small class="text-muted">{{ r.start_time|time:"H:i" }} &ndash; {{ r.end_time|time:"H:i" }}</small>
+                            </td>
+                            <td>{{ r.duration_hours }} hrs</td>
+                            <td><span class="status-badge status-{{ r.status|lower }}">{{ r.get_status_display }}</span></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No reservations match the selected reporting filters.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

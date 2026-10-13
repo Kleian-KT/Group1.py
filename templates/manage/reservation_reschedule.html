@@ -1,0 +1,99 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}Reschedule Reservation: {{ reservation.reference }} - Campus Admin{% endblock %}
+{% block page_title %}Reschedule Reservation: {{ reservation.reference }}{% endblock %}
+{% block page_subtitle %}Reassign date/time for approved booking with atomic conflict revalidation and audit history{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_reservation_detail' reservation_id=reservation.id %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to Reservation
+</a>
+{% endblock %}
+
+{% block admin_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Current Schedule Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-clock-history me-2 text-primary"></i>Current Approved Schedule
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Facility</small>
+                        <strong class="text-dark">{{ reservation.facility.name }} ({{ reservation.facility.code }})</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Applicant</small>
+                        <strong class="text-dark">{{ reservation.user.display_name }} (@{{ reservation.user.username }})</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Event Title</small>
+                        <strong class="text-dark">{{ reservation.title }}</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Current Timeslot</small>
+                        <strong class="text-primary">{{ reservation.start_time|date:"M d, Y" }} &bull; {{ reservation.start_time|time:"H:i" }} - {{ reservation.end_time|time:"H:i" }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reschedule Form Card -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-calendar-event me-2 text-warning"></i>Propose New Timeslot
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                {% if form.errors %}
+                    <div class="alert alert-danger py-2 small">
+                        <ul class="mb-0 ps-3">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted">New Start Datetime <span class="text-danger">*</span></label>
+                            {{ form.new_start_time }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted">New End Datetime <span class="text-danger">*</span></label>
+                            {{ form.new_end_time }}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-muted">Administrative Reason for Rescheduling <span class="text-danger">*</span></label>
+                            {{ form.reason }}
+                            <div class="form-text">Reason will be permanently archived in the ReservationChange audit record.</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+                        <a href="{% url 'admin_reservation_detail' reservation_id=reservation.id %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-warning px-4 fw-semibold" onclick="return confirm('Confirm reschedule? Original schedule will be preserved in change history.');">
+                            <i class="bi bi-check2-circle me-1"></i> Apply Rescheduling
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

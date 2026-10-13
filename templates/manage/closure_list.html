@@ -1,0 +1,166 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}Closure Management - Campus Operations{% endblock %}
+{% block page_title %}Facility Closure Management{% endblock %}
+{% block page_subtitle %}Schedule maintenance closures, blackout dates, and enforce availability blockades{% endblock %}
+
+{% block admin_content %}
+<!-- Conflicts Alert if any detected -->
+{% if conflicts %}
+    <div class="alert alert-danger shadow-sm mb-4" role="alert">
+        <h5 class="alert-heading fw-bold mb-2">
+            <i class="bi bi-exclamation-octagon-fill me-2"></i>Closure Blocked: Conflicting Bookings Detected
+        </h5>
+        <p class="mb-3 small">
+            The requested closure cannot be scheduled because the following <strong>{{ conflicts|length }}</strong> approved/checked-in reservation(s) overlap with this interval. You must explicitly resolve them by rescheduling or cancelling before the closure can be activated:
+        </p>
+        <div class="table-responsive bg-white rounded border mb-3">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Applicant</th>
+                        <th>Event Title</th>
+                        <th>Scheduled Window</th>
+                        <th>Status</th>
+                        <th class="text-end">Resolution Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in conflicts %}
+                        <tr>
+                            <td><strong class="font-monospace text-primary">{{ c.reference }}</strong></td>
+                            <td>{{ c.user.display_name }}</td>
+                            <td>{{ c.title }}</td>
+                            <td>{{ c.start_time|date:"M d, Y" }} &bull; {{ c.start_time|time:"H:i" }} - {{ c.end_time|time:"H:i" }}</td>
+                            <td><span class="status-badge status-{{ c.status|lower }}">{{ c.get_status_display }}</span></td>
+                            <td class="text-end">
+                                <a href="{% url 'admin_reservation_detail' reservation_id=c.id %}" target="_blank" class="btn btn-sm btn-outline-danger">
+                                    Reschedule / Cancel &rarr;
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Active Closures List -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-slash-circle me-2 text-danger"></i>Scheduled Facility Closures
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Facility</th>
+                                <th>Closure Period</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in closures %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ c.facility.name }}</div>
+                                        <small class="text-muted">{{ c.facility.code }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">{{ c.start_time|date:"M d, Y" }}</div>
+                                        <small class="text-muted">{{ c.start_time|time:"H:i" }} &ndash; {{ c.end_time|time:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-dark">{{ c.reason|truncatechars:45 }}</small>
+                                        <small class="text-muted d-block">By: {{ c.created_by.username }}</small>
+                                    </td>
+                                    <td>
+                                        {% if c.is_active %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Archived</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        {% if c.is_active %}
+                                            <form method="post" action="{% url 'admin_closure_archive' closure_id=c.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('Archive this closure? The time slot will be released for bookings.');">
+                                                    Archive
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <span class="small text-muted">Archived</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <i class="bi bi-check-circle fs-3 text-success d-block mb-1"></i>
+                                        No active or historical facility closures.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Closure Form -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>Schedule Facility Closure
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-muted mb-3">
+                    Active closure periods block overlapping reservations from being approved or submitted.
+                </p>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Facility <span class="text-danger">*</span></label>
+                        {{ form.facility }}
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted">Start Datetime <span class="text-danger">*</span></label>
+                            {{ form.start_time }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted">End Datetime <span class="text-danger">*</span></label>
+                            {{ form.end_time }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-muted">Reason for Closure <span class="text-danger">*</span></label>
+                        {{ form.reason }}
+                    </div>
+
+                    <button type="submit" class="btn btn-navy w-100 fw-semibold">
+                        <i class="bi bi-slash-circle me-1"></i> Schedule Closure Period
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

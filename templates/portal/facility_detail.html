@@ -1,0 +1,156 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}{{ facility.name }} - Availability - Campus Portal{% endblock %}
+{% block portal_title %}{{ facility.name }} ({{ facility.code }}){% endblock %}
+{% block portal_subtitle %}{{ facility.category.name }} &bull; {{ facility.location }} &bull; Capacity: {{ facility.capacity }} Attendees{% endblock %}
+
+{% block portal_actions %}
+<a href="{% url 'user_facility_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to Facilities
+</a>
+<a href="{% url 'user_reservation_create' %}?facility={{ facility.id }}&date={{ selected_date|date:'Y-m-d' }}" class="btn btn-navy">
+    <i class="bi bi-calendar-plus me-1"></i> Request This Facility
+</a>
+{% endblock %}
+
+{% block portal_content %}
+<div class="row g-4 mb-4">
+    <!-- Facility Profile & Amenities -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-info-circle me-2 text-primary"></i>Facility Details
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <ul class="list-group list-group-flush small mb-3">
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Code:</span>
+                        <strong class="font-monospace text-primary">{{ facility.code }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Category:</span>
+                        <strong>{{ facility.category.name }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Max Capacity:</span>
+                        <strong>{{ facility.capacity }} Persons</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Location:</span>
+                        <span>{{ facility.location }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Default Hours:</span>
+                        <span>{{ facility.default_open_time|time:"H:i" }} &ndash; {{ facility.default_close_time|time:"H:i" }}</span>
+                    </li>
+                </ul>
+
+                {% if facility.description %}
+                    <div class="pt-3 border-top">
+                        <label class="form-label small fw-semibold text-muted">Description & Guidelines</label>
+                        <p class="small text-muted mb-0">{{ facility.description }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Amenities Catalog in Facility -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-box-seam me-2 text-primary"></i>Available Amenities
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                {% if amenities %}
+                    <div class="row g-2">
+                        {% for a in amenities %}
+                            <div class="col-sm-6">
+                                <div class="p-2 border rounded-3 bg-light d-flex align-items-center gap-2 small">
+                                    <i class="bi {{ a.amenity.icon }} text-primary fs-5"></i>
+                                    <div>
+                                        <strong class="d-block text-dark">{{ a.amenity.name }}</strong>
+                                        <small class="text-muted">Qty: {{ a.quantity }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="small text-muted mb-0">No special amenities listed for this room.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Picker & Hourly Availability Calculator -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-calendar3 me-2 text-primary"></i>Check Timeslot Availability
+                </h5>
+                <form method="get" class="d-flex align-items-center gap-2">
+                    <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" class="form-control form-control-sm" onchange="this.form.submit()">
+                    <button type="submit" class="btn btn-navy btn-sm">Inspect</button>
+                </form>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">Schedule for {{ selected_date|date:"l, F d, Y" }}</h6>
+                        {% if availability.is_closed %}
+                            <small class="text-danger fw-semibold">Facility is closed on this weekday.</small>
+                        {% else %}
+                            <small class="text-muted">Operating Hours: {{ availability.open_time|time:"H:i" }} &ndash; {{ availability.close_time|time:"H:i" }}</small>
+                        {% endif %}
+                    </div>
+                    <!-- Legend -->
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Available</span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Booked / Closed</span>
+                    </div>
+                </div>
+
+                {% if availability.is_closed %}
+                    <div class="alert alert-danger py-3">
+                        <i class="bi bi-slash-circle-fill me-2"></i> This facility is closed according to the campus weekday operating schedule on {{ selected_date|date:"l" }}s. Please pick another date.
+                    </div>
+                {% else %}
+                    <p class="small text-muted mb-3">
+                        Hourly intervals are calculated from current approved bookings and maintenance closures.
+                    </p>
+
+                    <div class="row g-2 mb-4">
+                        {% for slot in availability.slots %}
+                            <div class="col-sm-6 col-md-4">
+                                <div class="p-3 rounded-3 border text-center {% if slot.is_available %}bg-success-subtle border-success-subtle text-success{% else %}bg-danger-subtle border-danger-subtle text-danger{% endif %}">
+                                    <div class="fw-bold font-monospace fs-6">
+                                        {{ slot.start_time|time:"H:i" }} &ndash; {{ slot.end_time|time:"H:i" }}
+                                    </div>
+                                    <small class="d-block fw-semibold mt-1">
+                                        {% if slot.is_available %}
+                                            <i class="bi bi-check-circle-fill me-1"></i> Available
+                                        {% else %}
+                                            <i class="bi bi-x-circle-fill me-1"></i> {{ slot.reason }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">Ready to reserve a timeslot?</span>
+                        <a href="{% url 'user_reservation_create' %}?facility={{ facility.id }}&date={{ selected_date|date:'Y-m-d' }}" class="btn btn-navy btn-sm px-4">
+                            Proceed to Reservation Form &rarr;
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

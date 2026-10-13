@@ -1,0 +1,129 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}Audit Logs - Campus Admin{% endblock %}
+{% block page_title %}System Audit Trail{% endblock %}
+{% block page_subtitle %}Immutable chronological audit log of operational and administrative actions{% endblock %}
+
+{% block admin_content %}
+<!-- Search & Filter Bar -->
+<div class="filter-bar">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label small fw-semibold text-muted">Search Audit Entries</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search actor, target reference, or details...">
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Action Type</label>
+            <select name="action" class="form-select">
+                <option value="">All Actions</option>
+                {% for code, label in actions %}
+                    <option value="{{ code }}" {% if action_filter == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Date</label>
+            <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+        </div>
+
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-navy flex-grow-1">Filter</button>
+            {% if search_query or action_filter or date_filter %}
+                <a href="{% url 'admin_audit_logs' %}" class="btn btn-outline-secondary" title="Reset"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Audit Log Table -->
+<div class="table-responsive table-custom shadow-sm mb-4">
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Target Reference</th>
+                <th>Details / Reason</th>
+                <th>IP Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in page_obj %}
+                <tr>
+                    <td>
+                        <div class="fw-semibold text-dark">{{ log.timestamp|date:"M d, Y" }}</div>
+                        <small class="text-muted font-monospace">{{ log.timestamp|date:"H:i:s" }}</small>
+                    </td>
+                    <td>
+                        {% if log.actor %}
+                            <div class="fw-bold text-dark">{{ log.actor.display_name }}</div>
+                            <small class="text-muted">@{{ log.actor.username }}</small>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary">System</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border font-monospace">{{ log.get_action_display }}</span>
+                    </td>
+                    <td>
+                        <strong class="font-monospace text-primary small">{{ log.target_reference|default:"-" }}</strong>
+                        {% if log.target_type %}
+                            <small class="text-muted d-block">{{ log.target_type }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ log.details|default:"-" }}</small>
+                    </td>
+                    <td>
+                        <small class="text-muted font-monospace">{{ log.ip_address|default:"127.0.0.1" }}</small>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="bi bi-journal-text empty-state-icon"></i>
+                            <div class="empty-state-title">No Audit Entries Found</div>
+                            <p class="empty-state-text">No logged events match the selected search criteria.</p>
+                            <a href="{% url 'admin_audit_logs' %}" class="btn btn-outline-secondary btn-sm">Clear Filters</a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+    <nav aria-label="Audit pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&action={{ action_filter }}&date={{ date_filter }}">Previous</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ search_query }}&action={{ action_filter }}&date={{ date_filter }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&action={{ action_filter }}&date={{ date_filter }}">Next</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

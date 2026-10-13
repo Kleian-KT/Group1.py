@@ -1,0 +1,322 @@
+/* Campus Facility Reservation Management System - Custom CSS */
+:root {
+    --primary-navy: #0f2942;
+    --primary-navy-dark: #0a1c2e;
+    --primary-navy-light: #1e3a5f;
+    --secondary-blue: #2563eb;
+    --secondary-blue-hover: #1d4ed8;
+    --accent-teal: #0d9488;
+    --bg-light: #f8fafc;
+    --surface-white: #ffffff;
+    --border-color: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --sidebar-width: 260px;
+}
+
+body {
+    background-color: var(--bg-light);
+    color: var(--text-main);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Typography & Links */
+a {
+    color: var(--secondary-blue);
+    text-decoration: none;
+}
+a:hover {
+    color: var(--secondary-blue-hover);
+    text-decoration: underline;
+}
+
+/* Cards & Surfaces */
+.card {
+    background: var(--surface-white);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(15, 41, 66, 0.05);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+}
+.card-footer {
+    background: transparent;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Dashboard KPI Cards */
+.kpi-card {
+    border-radius: 10px;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+.kpi-card .kpi-icon {
+    font-size: 2.25rem;
+    opacity: 0.85;
+}
+.kpi-card .kpi-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+.kpi-card .kpi-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Admin Sidebar Layout */
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+.admin-sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--primary-navy);
+    color: #f1f5f9;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+    z-index: 100;
+}
+.sidebar-brand {
+    padding: 1.25rem 1.5rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sidebar-nav {
+    padding: 1rem 0;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.sidebar-item {
+    padding: 0.65rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    color: #cbd5e1;
+    font-weight: 500;
+    font-size: 0.925rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.sidebar-item:hover, .sidebar-item.active {
+    color: #ffffff;
+    background-color: var(--primary-navy-light);
+    border-left: 4px solid var(--secondary-blue);
+    text-decoration: none;
+}
+.sidebar-item i {
+    font-size: 1.15rem;
+}
+.sidebar-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0.75rem 1.5rem;
+}
+
+/* Admin Content Area */
+.admin-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.admin-topbar {
+    background: var(--surface-white);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.85rem 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.admin-content {
+    padding: 2rem 2.25rem;
+    flex-grow: 1;
+}
+
+/* User Portal Layout */
+.portal-navbar {
+    background: var(--primary-navy);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.portal-navbar .navbar-brand {
+    font-weight: 700;
+    color: #ffffff;
+}
+.portal-navbar .nav-link {
+    color: #cbd5e1;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+}
+.portal-navbar .nav-link:hover, .portal-navbar .nav-link.active {
+    color: #ffffff;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.status-pending { background-color: #fef3c7; color: #92400e; }
+.status-approved { background-color: #dbeafe; color: #1e40af; }
+.status-checked-in { background-color: #e0e7ff; color: #3730a3; }
+.status-completed { background-color: #d1fae5; color: #065f46; }
+.status-rejected { background-color: #fee2e2; color: #991b1b; }
+.status-cancelled { background-color: #f1f5f9; color: #475569; }
+.status-no-show { background-color: #ede9fe; color: #5b21b6; }
+
+/* Filter & Search Bar */
+.filter-bar {
+    background: var(--surface-white);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Data Tables */
+.table-custom {
+    background: var(--surface-white);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+.table-custom th {
+    background: #f8fafc;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.85rem 1.15rem;
+}
+.table-custom td {
+    padding: 1rem 1.15rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+}
+.table-custom tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--secondary-blue);
+    border-color: var(--secondary-blue);
+}
+.btn-primary:hover {
+    background-color: var(--secondary-blue-hover);
+    border-color: var(--secondary-blue-hover);
+}
+.btn-navy {
+    background-color: var(--primary-navy);
+    border-color: var(--primary-navy);
+    color: #ffffff;
+}
+.btn-navy:hover {
+    background-color: var(--primary-navy-dark);
+    border-color: var(--primary-navy-dark);
+    color: #ffffff;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3.5rem 1.5rem;
+    background: var(--surface-white);
+    border: 1px dashed var(--border-color);
+    border-radius: 10px;
+}
+.empty-state-icon {
+    font-size: 3.5rem;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+}
+.empty-state-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+.empty-state-text {
+    color: var(--text-muted);
+    max-width: 460px;
+    margin: 0 auto 1.5rem auto;
+}
+
+/* Timeline / Calendar Styles */
+.slot-badge {
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    display: inline-block;
+    margin: 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.slot-available {
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+}
+.slot-booked {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+/* Print CSS for Reservation Slips and Reports */
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 12pt;
+    }
+    .admin-sidebar, .admin-topbar, .portal-navbar, .no-print, .btn, .pagination, .filter-bar {
+        display: none !important;
+    }
+    .admin-main, .admin-content, .container {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .card {
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+    .print-header {
+        display: block !important;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #000;
+        padding-bottom: 1rem;
+    }
+}
+.print-header {
+    display: none;
+}

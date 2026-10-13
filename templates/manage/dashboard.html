@@ -1,0 +1,272 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}Admin Dashboard - Campus Operations{% endblock %}
+{% block page_title %}Operational Dashboard{% endblock %}
+{% block page_subtitle %}Live metrics, reservation queue, and facility utilization{% endblock %}
+
+{% block admin_content %}
+<!-- 4 Real Database KPI Cards -->
+<div class="row g-4 mb-4">
+    <!-- Pending Requests -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card shadow-sm border-start border-warning border-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-label text-warning mb-1">Pending Requests</div>
+                    <div class="kpi-value text-dark">{{ pending_count }}</div>
+                    <small class="text-muted">Awaiting administrative review</small>
+                </div>
+                <div class="kpi-icon text-warning">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-top">
+                <a href="{% url 'admin_reservation_list' %}?status=PENDING" class="small fw-semibold text-warning d-flex align-items-center justify-content-between">
+                    <span>Review Queue</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approved Upcoming Bookings -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card shadow-sm border-start border-primary border-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-label text-primary mb-1">Approved Upcoming</div>
+                    <div class="kpi-value text-dark">{{ approved_upcoming_count }}</div>
+                    <small class="text-muted">Future confirmed bookings</small>
+                </div>
+                <div class="kpi-icon text-primary">
+                    <i class="bi bi-calendar-check-fill"></i>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-top">
+                <a href="{% url 'admin_calendar' %}" class="small fw-semibold text-primary d-flex align-items-center justify-content-between">
+                    <span>View Calendar</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Events -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card shadow-sm border-start border-success border-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-label text-success mb-1">Completed Events</div>
+                    <div class="kpi-value text-dark">{{ completed_count }}</div>
+                    <small class="text-muted">Concluded events on record</small>
+                </div>
+                <div class="kpi-icon text-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-top">
+                <a href="{% url 'admin_event_list' %}?status=COMPLETED" class="small fw-semibold text-success d-flex align-items-center justify-content-between">
+                    <span>Event Records</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Facilities -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card shadow-sm border-start border-info border-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-label text-info mb-1">Active Facilities</div>
+                    <div class="kpi-value text-dark">{{ active_facilities_count }}</div>
+                    <small class="text-muted">Operational campus spaces</small>
+                </div>
+                <div class="kpi-icon text-info">
+                    <i class="bi bi-buildings-fill"></i>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-top">
+                <a href="{% url 'admin_facility_list' %}" class="small fw-semibold text-info d-flex align-items-center justify-content-between">
+                    <span>Manage Spaces</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Monthly Reservation Volume -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-graph-up me-2 text-primary"></i>Monthly Reservation Volume
+                </h5>
+                <span class="badge bg-light text-muted border">Live Database Metrics</span>
+            </div>
+            <div class="card-body p-4">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Facility Usage Comparison -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-pie-chart-fill me-2 text-info"></i>Facility Usage Breakdown
+                </h5>
+                <span class="badge bg-light text-muted border">Top Facilities</span>
+            </div>
+            <div class="card-body p-4">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="facilityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Pending Requests Queue -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-clock me-2 text-warning"></i>Recent Pending Requests
+        </h5>
+        <a href="{% url 'admin_reservation_list' %}?status=PENDING" class="btn btn-outline-primary btn-sm">
+            View All Pending ({{ pending_count }})
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Applicant</th>
+                        <th>Facility</th>
+                        <th>Event Title</th>
+                        <th>Requested Schedule</th>
+                        <th>Submission Date</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in recent_pending %}
+                        <tr>
+                            <td><span class="fw-bold font-monospace text-primary">{{ res.reference }}</span></td>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ res.user.display_name }}</div>
+                                <small class="text-muted">@{{ res.user.username }}</small>
+                            </td>
+                            <td>{{ res.facility.name }}</td>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ res.title }}</div>
+                                <small class="text-muted">{{ res.participant_count }} participants</small>
+                            </td>
+                            <td>
+                                <div>{{ res.start_time|date:"M d, Y" }}</div>
+                                <small class="text-muted">{{ res.start_time|time:"H:i" }} - {{ res.end_time|time:"H:i" }}</small>
+                            </td>
+                            <td><small class="text-muted">{{ res.created_at|date:"M d, Y H:i" }}</small></td>
+                            <td class="text-end">
+                                <a href="{% url 'admin_reservation_detail' reservation_id=res.id %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-check2-circle me-1"></i> Review
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="bi bi-check2-all fs-2 text-success d-block mb-1"></i>
+                                No pending requests awaiting review.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Live Chart Rendering
+    document.addEventListener('DOMContentLoaded', function() {
+        const monthlyLabels = JSON.parse('{{ monthly_labels_json|escapejs }}');
+        const monthlyCounts = JSON.parse('{{ monthly_counts_json|escapejs }}');
+        const facilityLabels = JSON.parse('{{ facility_labels_json|escapejs }}');
+        const facilityCounts = JSON.parse('{{ facility_counts_json|escapejs }}');
+
+        // Monthly Line Chart
+        const ctxMonthly = document.getElementById('monthlyChart').getContext('2d');
+        new Chart(ctxMonthly, {
+            type: 'line',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Reservations',
+                    data: monthlyCounts,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#2563eb',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+
+        // Facility Bar Chart
+        const ctxFacility = document.getElementById('facilityChart').getContext('2d');
+        new Chart(ctxFacility, {
+            type: 'bar',
+            data: {
+                labels: facilityLabels,
+                datasets: [{
+                    label: 'Bookings',
+                    data: facilityCounts,
+                    backgroundColor: [
+                        '#0f2942', '#2563eb', '#0d9488', '#f59e0b', '#8b5cf6', '#64748b'
+                    ],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

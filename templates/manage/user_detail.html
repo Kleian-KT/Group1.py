@@ -1,0 +1,194 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}User Account: {{ target_user.display_name }} - Campus Admin{% endblock %}
+{% block page_title %}Account Profile: {{ target_user.display_name }}{% endblock %}
+{% block page_subtitle %}Comprehensive user profile, account status controls, and booking history{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_user_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to Users
+</a>
+{% endblock %}
+
+{% block admin_content %}
+<div class="row g-4 mb-4">
+    <!-- User Overview Card -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-person-badge me-2 text-primary"></i>Identity Details
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 72px; height: 72px;">
+                        <i class="bi bi-person fs-1"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-1">{{ target_user.display_name }}</h4>
+                    <div class="text-muted small mb-2">@{{ target_user.username }}</div>
+                    {% if target_user.role == 'ADMIN' %}
+                        <span class="badge bg-primary px-3 py-2 text-uppercase">Administrator</span>
+                    {% else %}
+                        <span class="badge bg-secondary px-3 py-2 text-uppercase">Basic User</span>
+                    {% endif %}
+                </div>
+
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Email:</span>
+                        <span class="fw-semibold">{{ target_user.email|default:"N/A" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Phone:</span>
+                        <span class="fw-semibold">{{ target_user.phone_number|default:"N/A" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Student / Emp ID:</span>
+                        <span class="fw-semibold">{{ target_user.student_or_employee_id|default:"N/A" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Department:</span>
+                        <span class="fw-semibold">{{ target_user.department|default:"N/A" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Account Joined:</span>
+                        <span class="fw-semibold">{{ target_user.date_joined|date:"M d, Y H:i" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Last Login:</span>
+                        <span class="fw-semibold">{{ target_user.last_login|date:"M d, Y H:i"|default:"Never" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                        <span class="text-muted">Status:</span>
+                        {% if target_user.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Deactivated</span>
+                        {% endif %}
+                    </li>
+                </ul>
+
+                <!-- Activation Toggle Action -->
+                <div class="mt-4 pt-3 border-top">
+                    {% if target_user == request.user %}
+                        <div class="alert alert-info py-2 small mb-0">
+                            <i class="bi bi-shield-lock me-1"></i> You cannot deactivate your own administrative account.
+                        </div>
+                    {% else %}
+                        <form method="post" action="{% url 'admin_user_toggle_status' user_id=target_user.id %}">
+                            {% csrf_token %}
+                            {% if target_user.is_active %}
+                                <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Are you sure you want to deactivate this account? The user will immediately be barred from signing in and making reservations, but historical records will be preserved.');">
+                                    <i class="bi bi-person-x-fill me-1"></i> Deactivate User Account
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-success w-100" onclick="return confirm('Reactivate this account?');">
+                                    <i class="bi bi-person-check-fill me-1"></i> Reactivate User Account
+                                </button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking History for this User -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-clock-history me-2 text-info"></i>Reservation History ({{ res_page_obj.paginator.count }})
+                </h5>
+                <span class="text-muted small">Historical bookings preserved</span>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Facility</th>
+                                <th>Event Title</th>
+                                <th>Schedule</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for res in res_page_obj %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold font-monospace small text-primary">{{ res.reference }}</span>
+                                    </td>
+                                    <td>{{ res.facility.name }}</td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">{{ res.title }}</div>
+                                        <small class="text-muted">{{ res.participant_count }} participants</small>
+                                    </td>
+                                    <td>
+                                        <div>{{ res.start_time|date:"M d, Y" }}</div>
+                                        <small class="text-muted">{{ res.start_time|time:"H:i" }} - {{ res.end_time|time:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-{{ res.status|lower }}">
+                                            {{ res.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'admin_reservation_detail' reservation_id=res.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Review
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        <i class="bi bi-calendar-x fs-3 d-block mb-2"></i>
+                                        No reservations on record for this user.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- History Pagination -->
+                {% if res_page_obj.has_other_pages %}
+                    <div class="p-3 border-top">
+                        <nav aria-label="Reservation history pagination">
+                            <ul class="pagination pagination-sm justify-content-center mb-0">
+                                {% if res_page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ res_page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                                {% endif %}
+
+                                {% for num in res_page_obj.paginator.page_range %}
+                                    {% if res_page_obj.number == num %}
+                                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > res_page_obj.number|add:'-3' and num < res_page_obj.number|add:'3' %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if res_page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ res_page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}Submit Reservation Request - Campus Portal{% endblock %}
+{% block portal_title %}New Reservation Request{% endblock %}
+{% block portal_subtitle %}Request a campus facility booking for student events, meetings, or academic activities{% endblock %}
+
+{% block portal_actions %}
+<a href="{% url 'user_facility_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-buildings me-1"></i> Browse Facilities
+</a>
+{% endblock %}
+
+{% block portal_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Guidelines Alert -->
+        <div class="alert alert-info py-3 mb-4 shadow-sm" role="alert">
+            <h6 class="fw-bold mb-1"><i class="bi bi-info-circle-fill me-2"></i>Booking Guidelines & Restrictions</h6>
+            <ul class="mb-0 small ps-3">
+                <li>Maximum continuous event duration is <strong>{{ max_duration }} hours</strong>.</li>
+                <li>Bookings must be scheduled within <strong>{{ max_advance }} calendar days</strong> in advance.</li>
+                <li>All bookings must fall strictly within the facility's daily operating hours. Overnight events are not permitted.</li>
+                <li>Valid submissions are created in <strong>Pending</strong> status and reviewed by campus administration.</li>
+            </ul>
+        </div>
+
+        <!-- Reservation Form -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-calendar-plus me-2 text-primary"></i>Event Reservation Details
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                {% if form.errors %}
+                    <div class="alert alert-danger py-2 small mb-3">
+                        <ul class="mb-0 ps-3">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-muted">Select Facility <span class="text-danger">*</span></label>
+                            {{ form.facility }}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-muted">Event Title <span class="text-danger">*</span></label>
+                            {{ form.title }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted">Expected Number of Attendees <span class="text-danger">*</span></label>
+                            {{ form.participant_count }}
+                            <div class="form-text">Must not exceed facility capacity.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted">Requested By</label>
+                            <input type="text" class="form-control bg-light" value="{{ request.user.display_name }} (@{{ request.user.username }})" readonly disabled>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted">Start Datetime <span class="text-danger">*</span></label>
+                            {{ form.start_time }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted">End Datetime <span class="text-danger">*</span></label>
+                            {{ form.end_time }}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-muted">Event Purpose & Activity Outline <span class="text-danger">*</span></label>
+                            {{ form.purpose }}
+                            <div class="form-text">Provide sufficient details for the administrator to review and approve your request.</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+                        <a href="{% url 'user_reservation_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-navy px-4 fw-semibold">
+                            <i class="bi bi-send-check me-1"></i> Submit Reservation Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

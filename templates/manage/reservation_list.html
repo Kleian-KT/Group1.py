@@ -1,0 +1,150 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}Reservation Requests - Campus Admin{% endblock %}
+{% block page_title %}Reservation Requests{% endblock %}
+{% block page_subtitle %}Review incoming booking submissions, inspect conflicts, and manage approval queues{% endblock %}
+
+{% block admin_content %}
+<!-- Search & Filter Panel -->
+<div class="filter-bar">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Search Queue</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search reference, title, or applicant...">
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Filter Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                {% for code, label in statuses %}
+                    <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Facility</label>
+            <select name="facility" class="form-select">
+                <option value="">All Facilities</option>
+                {% for fac in facilities %}
+                    <option value="{{ fac.id }}" {% if facility_id == fac.id|stringformat:"s" %}selected{% endif %}>{{ fac.code }} - {{ fac.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Date</label>
+            <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+        </div>
+
+        <div class="col-md-1 d-flex gap-1">
+            <button type="submit" class="btn btn-navy flex-grow-1" title="Filter"><i class="bi bi-funnel"></i></button>
+            {% if search_query or status_filter or facility_id or date_filter %}
+                <a href="{% url 'admin_reservation_list' %}" class="btn btn-outline-secondary" title="Reset"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Reservation Queue Table -->
+<div class="table-responsive table-custom shadow-sm mb-4">
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Reference</th>
+                <th>Applicant</th>
+                <th>Facility</th>
+                <th>Event Title</th>
+                <th>Requested Schedule</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th class="text-end">Review</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in page_obj %}
+                <tr>
+                    <td>
+                        <span class="fw-bold font-monospace text-primary">{{ r.reference }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-dark">{{ r.user.display_name }}</div>
+                        <small class="text-muted">@{{ r.user.username }}</small>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-dark">{{ r.facility.name }}</div>
+                        <small class="text-muted">{{ r.facility.code }} &bull; Cap: {{ r.facility.capacity }}</small>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ r.title }}</div>
+                        <small class="text-muted"><i class="bi bi-people me-1"></i>{{ r.participant_count }} attendees</small>
+                    </td>
+                    <td>
+                        <div class="fw-semibold">{{ r.start_time|date:"M d, Y" }}</div>
+                        <small class="text-muted">{{ r.start_time|time:"H:i" }} - {{ r.end_time|time:"H:i" }} ({{ r.duration_hours }}h)</small>
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ r.created_at|date:"M d, Y H:i" }}</small>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ r.status|lower }}">{{ r.get_status_display }}</span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'admin_reservation_detail' reservation_id=r.id %}" class="btn btn-primary btn-sm px-3">
+                            <i class="bi bi-search me-1"></i> Review
+                        </a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox empty-state-icon"></i>
+                            <div class="empty-state-title">No Reservations Found</div>
+                            <p class="empty-state-text">No booking records match the selected filters.</p>
+                            <a href="{% url 'admin_reservation_list' %}" class="btn btn-outline-secondary btn-sm">Reset Filters</a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+    <nav aria-label="Reservation queue pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&status={{ status_filter }}&facility={{ facility_id }}&date={{ date_filter }}">Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&q={{ search_query }}&status={{ status_filter }}&facility={{ facility_id }}&date={{ date_filter }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&status={{ status_filter }}&facility={{ facility_id }}&date={{ date_filter }}">Next</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

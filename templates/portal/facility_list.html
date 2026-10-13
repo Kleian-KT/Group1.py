@@ -1,0 +1,128 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}Browse Facilities - Campus Portal{% endblock %}
+{% block portal_title %}Browse Campus Facilities{% endblock %}
+{% block portal_subtitle %}Discover lecture halls, computer labs, auditoriums, and collaborative study rooms{% endblock %}
+
+{% block portal_content %}
+<!-- Search & Filter Panel -->
+<div class="filter-bar">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label small fw-semibold text-muted">Search Facilities</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by facility name, location, or code...">
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Category</label>
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if category_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Minimum Capacity</label>
+            <input type="number" name="capacity" value="{{ min_capacity }}" min="1" class="form-control" placeholder="e.g. 50">
+        </div>
+
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-navy flex-grow-1">Search</button>
+            {% if search_query or category_id or min_capacity %}
+                <a href="{% url 'user_facility_list' %}" class="btn btn-outline-secondary" title="Reset"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Facilities Grid -->
+<div class="row g-4 mb-4">
+    {% for f in page_obj %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100 d-flex flex-column hover-shadow">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-primary-subtle text-primary font-monospace">{{ f.code }}</span>
+                        <span class="badge bg-light text-muted border">{{ f.category.name }}</span>
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-1">{{ f.name }}</h5>
+                    <p class="small text-muted mb-3 flex-grow-1">
+                        {{ f.description|truncatechars:90|default:"Well-maintained campus facility equipped for student and faculty events." }}
+                    </p>
+
+                    <div class="p-3 bg-light rounded-3 small text-muted mb-3">
+                        <div class="mb-1"><i class="bi bi-geo-alt me-1 text-primary"></i><strong>Location:</strong> {{ f.location }}</div>
+                        <div class="mb-1"><i class="bi bi-people me-1 text-primary"></i><strong>Capacity:</strong> {{ f.capacity }} Persons</div>
+                        <div><i class="bi bi-clock me-1 text-primary"></i><strong>Hours:</strong> {{ f.default_open_time|time:"H:i" }} &ndash; {{ f.default_close_time|time:"H:i" }}</div>
+                    </div>
+
+                    <!-- Amenities list preview -->
+                    {% if f.facility_amenities.all %}
+                        <div class="mb-3 d-flex flex-wrap gap-1">
+                            {% for fa in f.facility_amenities.all|slice:":3" %}
+                                <span class="badge bg-white text-muted border small">
+                                    <i class="bi {{ fa.amenity.icon }} me-1 text-primary"></i>{{ fa.amenity.name }}
+                                </span>
+                            {% endfor %}
+                            {% if f.facility_amenities.all.count > 3 %}
+                                <span class="badge bg-light text-muted">+{{ f.facility_amenities.all.count|add:"-3" }} more</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-2 pt-2 border-top">
+                        <a href="{% url 'user_facility_detail' facility_id=f.id %}" class="btn btn-outline-primary btn-sm flex-grow-1">
+                            <i class="bi bi-calendar2-range me-1"></i> Availability
+                        </a>
+                        <a href="{% url 'user_reservation_create' %}?facility={{ f.id }}" class="btn btn-navy btn-sm px-3">
+                            Reserve
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="bi bi-buildings empty-state-icon"></i>
+                <div class="empty-state-title">No Facilities Found</div>
+                <p class="empty-state-text">No active facilities matched your search or capacity filter.</p>
+                <a href="{% url 'user_facility_list' %}" class="btn btn-outline-secondary btn-sm">Clear Search</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+    <nav aria-label="Browse facilities pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&category={{ category_id }}&capacity={{ min_capacity }}">Previous</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ search_query }}&category={{ category_id }}&capacity={{ min_capacity }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&category={{ category_id }}&capacity={{ min_capacity }}">Next</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

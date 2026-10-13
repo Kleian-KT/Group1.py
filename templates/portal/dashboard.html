@@ -1,0 +1,153 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}Dashboard - Campus Portal{% endblock %}
+{% block portal_title %}Welcome, {{ request.user.display_name }}!{% endblock %}
+{% block portal_subtitle %}Campus Facility Reservation System &bull; Discover, schedule, and track campus venue bookings{% endblock %}
+
+{% block portal_actions %}
+<a href="{% url 'user_facility_list' %}" class="btn btn-outline-primary">
+    <i class="bi bi-buildings me-1"></i> Browse Facilities
+</a>
+<a href="{% url 'user_reservation_create' %}" class="btn btn-navy">
+    <i class="bi bi-plus-circle me-1"></i> New Reservation
+</a>
+{% endblock %}
+
+{% block portal_content %}
+<!-- User Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-start border-warning border-4 p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="small fw-semibold text-warning text-uppercase">Pending Reviews</div>
+                    <div class="fs-2 fw-bold text-dark">{{ my_pending }}</div>
+                    <small class="text-muted">Awaiting administrator approval</small>
+                </div>
+                <div class="fs-1 text-warning opacity-75"><i class="bi bi-hourglass-split"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-start border-primary border-4 p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="small fw-semibold text-primary text-uppercase">Confirmed Upcoming</div>
+                    <div class="fs-2 fw-bold text-dark">{{ my_approved_upcoming }}</div>
+                    <small class="text-muted">Approved future events</small>
+                </div>
+                <div class="fs-1 text-primary opacity-75"><i class="bi bi-calendar-check"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-start border-success border-4 p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="small fw-semibold text-success text-uppercase">Total Submissions</div>
+                    <div class="fs-2 fw-bold text-dark">{{ my_total }}</div>
+                    <small class="text-muted">Historical and current requests</small>
+                </div>
+                <div class="fs-1 text-success opacity-75"><i class="bi bi-clock-history"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Reservations -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-list-check me-2 text-primary"></i>My Recent Reservations
+        </h5>
+        <a href="{% url 'user_reservation_list' %}" class="small">View Full History</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Facility</th>
+                        <th>Event Title</th>
+                        <th>Date & Time</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in recent_reservations %}
+                        <tr>
+                            <td><span class="fw-bold font-monospace text-primary">{{ r.reference }}</span></td>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ r.facility.name }}</div>
+                                <small class="text-muted">{{ r.facility.location }}</small>
+                            </td>
+                            <td>{{ r.title }}</td>
+                            <td>
+                                <div>{{ r.start_time|date:"M d, Y" }}</div>
+                                <small class="text-muted">{{ r.start_time|time:"H:i" }} &ndash; {{ r.end_time|time:"H:i" }}</small>
+                            </td>
+                            <td><span class="status-badge status-{{ r.status|lower }}">{{ r.get_status_display }}</span></td>
+                            <td class="text-end">
+                                <a href="{% url 'user_reservation_detail' reservation_id=r.id %}" class="btn btn-outline-primary btn-sm">
+                                    View Details
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="empty-state">
+                                    <i class="bi bi-calendar-plus empty-state-icon text-muted"></i>
+                                    <div class="empty-state-title">No Reservations Yet</div>
+                                    <p class="empty-state-text">You haven't submitted any campus facility reservations. Explore available facilities to get started.</p>
+                                    <a href="{% url 'user_facility_list' %}" class="btn btn-primary btn-sm">Explore Facilities</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Campus Facilities -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-stars me-2 text-warning"></i>Featured Campus Spaces</h5>
+        <a href="{% url 'user_facility_list' %}" class="small">Browse All Facilities &rarr;</a>
+    </div>
+
+    <div class="row g-4">
+        {% for f in featured_facilities %}
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100 hover-shadow">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary-subtle text-primary font-monospace">{{ f.code }}</span>
+                            <span class="badge bg-light text-muted border">{{ f.category.name }}</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">{{ f.name }}</h5>
+                        <p class="small text-muted mb-3 flex-grow-1">{{ f.description|truncatechars:80|default:"Modern campus facility." }}</p>
+                        
+                        <div class="small text-muted mb-3">
+                            <div><i class="bi bi-geo-alt me-1"></i>{{ f.location }}</div>
+                            <div><i class="bi bi-people me-1"></i>Capacity: {{ f.capacity }} pax</div>
+                            <div><i class="bi bi-clock me-1"></i>{{ f.default_open_time|time:"H:i" }} - {{ f.default_close_time|time:"H:i" }}</div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'user_facility_detail' facility_id=f.id %}" class="btn btn-outline-primary btn-sm flex-grow-1">Check Availability</a>
+                            <a href="{% url 'user_reservation_create' %}?facility={{ f.id }}" class="btn btn-navy btn-sm">Book</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

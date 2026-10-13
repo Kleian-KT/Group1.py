@@ -1,0 +1,117 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}Amenities Catalog - Campus Admin{% endblock %}
+{% block page_title %}Amenity Catalog{% endblock %}
+{% block page_subtitle %}Maintain campus equipment, audiovisual resources, and facility features{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_facility_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to Facilities
+</a>
+{% endblock %}
+
+{% block admin_content %}
+<div class="row g-4">
+    <!-- Amenities Directory -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-box-seam me-2 text-primary"></i>Amenity Directory
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Icon</th>
+                                <th>Amenity Name</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in amenities %}
+                                <tr>
+                                    <td>
+                                        <div class="bg-light p-2 rounded text-center text-primary" style="width: 36px; height: 36px;">
+                                            <i class="bi {{ a.icon }}"></i>
+                                        </div>
+                                    </td>
+                                    <td><strong>{{ a.name }}</strong></td>
+                                    <td><small class="text-muted">{{ a.description|default:"-" }}</small></td>
+                                    <td>
+                                        {% if a.is_active %}
+                                            <span class="badge bg-success-subtle text-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary">Archived</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <form method="post" action="{% url 'admin_amenity_archive' amenity_id=a.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            {% if a.is_active %}
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Archive this amenity?');">
+                                                    Archive
+                                                </button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-outline-success btn-sm" onclick="return confirm('Reactivate this amenity?');">
+                                                    Reactivate
+                                                </button>
+                                            {% endif %}
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No amenities defined yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Amenity Form -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>Add New Amenity
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Amenity Name <span class="text-danger">*</span></label>
+                        {{ form.name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Bootstrap Icon Class</label>
+                        {{ form.icon }}
+                        <div class="form-text">e.g. <code>bi-projector</code>, <code>bi-mic</code>, <code>bi-wifi</code>, <code>bi-tv</code></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Description</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="form-check mb-4">
+                        {{ form.is_active }}
+                        <label class="form-check-label small" for="{{ form.is_active.id_for_label }}">
+                            Active Amenity
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-navy w-100">
+                        <i class="bi bi-check2-circle me-1"></i> Save Amenity
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}Calendar and Schedule - Campus Admin{% endblock %}
+{% block page_title %}Calendar & Schedule{% endblock %}
+{% block page_subtitle %}Visual master calendar of campus facility bookings, events, and maintenance closures{% endblock %}
+
+{% block admin_content %}
+<!-- Calendar Controls & Filters -->
+<div class="filter-bar">
+    <div class="row g-3 align-items-center">
+        <!-- Date Navigation -->
+        <div class="col-md-5 d-flex align-items-center gap-2">
+            <div class="btn-group">
+                <a href="?view={{ view_type }}&facility={{ facility_id }}&date={{ prev_date }}" class="btn btn-outline-secondary" title="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                <a href="?view={{ view_type }}&facility={{ facility_id }}" class="btn btn-outline-secondary">Today</a>
+                <a href="?view={{ view_type }}&facility={{ facility_id }}&date={{ next_date }}" class="btn btn-outline-secondary" title="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+            <h5 class="fw-bold text-dark mb-0 ms-2">{{ period_title }}</h5>
+        </div>
+
+        <!-- View Switcher -->
+        <div class="col-md-3 text-md-center">
+            <div class="btn-group" role="group">
+                <a href="?view=day&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" class="btn btn-sm {% if view_type == 'day' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    Day View
+                </a>
+                <a href="?view=week&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" class="btn btn-sm {% if view_type == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    Week View
+                </a>
+            </div>
+        </div>
+
+        <!-- Facility Filter -->
+        <div class="col-md-4">
+            <form method="get" class="d-flex gap-2">
+                <input type="hidden" name="view" value="{{ view_type }}">
+                <input type="hidden" name="date" value="{{ curr_date|date:'Y-m-d' }}">
+                <select name="facility" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Facilities</option>
+                    {% for f in facilities %}
+                        <option value="{{ f.id }}" {% if facility_id == f.id|stringformat:"s" %}selected{% endif %}>
+                            {{ f.code }} - {{ f.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% if facility_id %}
+                    <a href="?view={{ view_type }}&date={{ curr_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-secondary" title="Clear filter">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar Board -->
+<div class="row g-3">
+    {% for day in date_days %}
+        <div class="{% if view_type == 'day' %}col-12{% else %}col-lg col-md-4 col-sm-6{% endif %}">
+            <div class="card shadow-sm h-100 {% if day == now.date %}border-primary border-2{% endif %}">
+                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center {% if day == now.date %}bg-primary-subtle text-primary fw-bold{% endif %}">
+                    <div>
+                        <span class="fw-bold d-block">{{ day|date:"l" }}</span>
+                        <small class="text-muted">{{ day|date:"M d, Y" }}</small>
+                    </div>
+                    {% if day == now.date %}
+                        <span class="badge bg-primary">Today</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-2" style="min-height: 240px; max-height: 520px; overflow-y: auto;">
+                    <!-- Closures on this Day -->
+                    {% for c in closures %}
+                        {% if c.start_time.date <= day and c.end_time.date >= day %}
+                            <div class="p-2 mb-2 rounded bg-danger-subtle border border-danger-subtle text-danger small">
+                                <div class="fw-bold"><i class="bi bi-slash-circle me-1"></i>Closure: {{ c.facility.code }}</div>
+                                <div class="text-dark">{{ c.start_time|time:"H:i" }} - {{ c.end_time|time:"H:i" }}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">{{ c.reason|truncatechars:35 }}</div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Bookings on this Day -->
+                    {% for r in reservations %}
+                        {% if r.start_time.date == day %}
+                            <div class="p-2 mb-2 rounded border bg-light small hover-shadow">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold font-monospace text-primary" style="font-size: 0.75rem;">{{ r.reference }}</span>
+                                    <span class="status-badge status-{{ r.status|lower }}" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">{{ r.get_status_display }}</span>
+                                </div>
+                                <div class="fw-bold text-dark text-truncate">{{ r.title }}</div>
+                                <div class="text-muted mb-1" style="font-size: 0.78rem;">
+                                    <i class="bi bi-geo-alt me-1"></i>{{ r.facility.code }} &bull; {{ r.start_time|time:"H:i" }}-{{ r.end_time|time:"H:i" }}
+                                </div>
+                                <div class="text-end">
+                                    <a href="{% url 'admin_reservation_detail' reservation_id=r.id %}" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size: 0.72rem;">
+                                        Details
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

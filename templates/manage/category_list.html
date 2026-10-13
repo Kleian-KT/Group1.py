@@ -1,0 +1,106 @@
+{% extends 'manage/base_admin.html' %}
+
+{% block title %}Facility Categories - Campus Admin{% endblock %}
+{% block page_title %}Facility Categories{% endblock %}
+{% block page_subtitle %}Classify campus facilities into functional and administrative categories{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_facility_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to Facilities
+</a>
+{% endblock %}
+
+{% block admin_content %}
+<div class="row g-4">
+    <!-- Categories Table -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-tags me-2 text-primary"></i>Category Directory
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Category Name</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in categories %}
+                                <tr>
+                                    <td><strong>{{ c.name }}</strong></td>
+                                    <td><small class="text-muted">{{ c.description|default:"-" }}</small></td>
+                                    <td>
+                                        {% if c.is_active %}
+                                            <span class="badge bg-success-subtle text-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary">Archived</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <form method="post" action="{% url 'admin_category_archive' category_id=c.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            {% if c.is_active %}
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Archive this category?');">
+                                                    Archive
+                                                </button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-outline-success btn-sm" onclick="return confirm('Reactivate this category?');">
+                                                    Reactivate
+                                                </button>
+                                            {% endif %}
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No categories created yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Category Form -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-dark">
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>Create New Category
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Category Name <span class="text-danger">*</span></label>
+                        {{ form.name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Description</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="form-check mb-4">
+                        {{ form.is_active }}
+                        <label class="form-check-label small" for="{{ form.is_active.id_for_label }}">
+                            Active Category
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-navy w-100">
+                        <i class="bi bi-check2-circle me-1"></i> Add Category
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

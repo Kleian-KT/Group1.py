@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Campus Facility Reservation System{% endblock %}
+
+{% block layout_content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5" style="background: linear-gradient(135deg, #0f2942 0%, #1e3a5f 100%);">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-white text-center pt-4 pb-3 border-0">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 56px; height: 56px;">
+                            <i class="bi bi-person-plus-fill fs-3"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-1">Create User Account</h4>
+                        <p class="text-muted small mb-0">Register as a student, faculty, or campus organization member</p>
+                    </div>
+
+                    <div class="card-body p-4 pt-2">
+                        {% if form.errors %}
+                            <div class="alert alert-danger py-2 small">
+                                <ul class="mb-0 ps-3">
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <form method="post" action="{% url 'register' %}">
+                            {% csrf_token %}
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">First Name</label>
+                                    {{ form.first_name }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Last Name</label>
+                                    {{ form.last_name }}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Username <span class="text-danger">*</span></label>
+                                    {{ form.username }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Email <span class="text-danger">*</span></label>
+                                    {{ form.email }}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Phone Number</label>
+                                    {{ form.phone_number }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Student / Employee ID</label>
+                                    {{ form.student_or_employee_id }}
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold text-muted">Department / College / Organization</label>
+                                    {{ form.department }}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Password <span class="text-danger">*</span></label>
+                                    {{ form.password }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Confirm Password <span class="text-danger">*</span></label>
+                                    {{ form.password_confirm }}
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-navy w-100 py-2 fw-semibold shadow-sm mt-4 mb-3">
+                                <i class="bi bi-check2-circle me-1"></i> Register Account
+                            </button>
+                        </form>
+
+                        <div class="text-center pt-2 border-top">
+                            <span class="small text-muted">Already registered?</span>
+                            <a href="{% url 'login' %}" class="small fw-semibold ms-1">Sign In</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

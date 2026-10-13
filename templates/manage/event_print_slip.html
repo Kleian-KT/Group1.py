@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Reservation Slip: {{ reservation.reference }}{% endblock %}
+
+{% block layout_content %}
+<div class="container py-4" style="max-width: 800px;">
+    <!-- Action Bar (hidden when printing) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <a href="{% url 'admin_event_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Event Operations
+        </a>
+        <button onclick="window.print()" class="btn btn-primary btn-sm px-4">
+            <i class="bi bi-printer me-1"></i> Print Slip / Summary
+        </button>
+    </div>
+
+    <!-- Official Printable Document Card -->
+    <div class="card p-4 p-md-5 border shadow-sm">
+        <!-- Header -->
+        <div class="border-bottom pb-4 mb-4 text-center">
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                <i class="bi bi-building-check text-primary fs-2"></i>
+                <h3 class="fw-bold mb-0 text-dark">CAMPUS FACILITY MANAGEMENT</h3>
+            </div>
+            <p class="text-muted small mb-1 text-uppercase fw-semibold" style="letter-spacing: 1px;">Official Facility Reservation Slip & Operational Summary</p>
+            <div class="text-muted small">Generated on {{ now|date:"F d, Y \a\t H:i" }}</div>
+        </div>
+
+        <!-- Reference & Status Strip -->
+        <div class="row align-items-center bg-light p-3 rounded-3 mb-4 border">
+            <div class="col-sm-6">
+                <span class="text-muted small d-block">Reservation Reference</span>
+                <span class="fs-4 fw-bold font-monospace text-primary">{{ reservation.reference }}</span>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <span class="text-muted small d-block">Current Status</span>
+                <span class="status-badge status-{{ reservation.status|lower }} fs-6">{{ reservation.get_status_display }}</span>
+            </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="row g-4 mb-4">
+            <div class="col-sm-6">
+                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Facility Information</h6>
+                <div class="mb-2"><span class="text-muted small">Facility Name:</span> <strong class="d-block">{{ reservation.facility.name }}</strong></div>
+                <div class="mb-2"><span class="text-muted small">Facility Code:</span> <strong class="d-block font-monospace">{{ reservation.facility.code }}</strong></div>
+                <div class="mb-2"><span class="text-muted small">Location:</span> <span class="d-block">{{ reservation.facility.location }}</span></div>
+                <div class="mb-2"><span class="text-muted small">Facility Capacity:</span> <span class="d-block">{{ reservation.facility.capacity }} Persons</span></div>
+            </div>
+
+            <div class="col-sm-6">
+                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Event & Organizer Details</h6>
+                <div class="mb-2"><span class="text-muted small">Event Title:</span> <strong class="d-block">{{ reservation.title }}</strong></div>
+                <div class="mb-2"><span class="text-muted small">Organizer / Applicant:</span> <strong class="d-block">{{ reservation.user.display_name }} (@{{ reservation.user.username }})</strong></div>
+                <div class="mb-2"><span class="text-muted small">Department:</span> <span class="d-block">{{ reservation.user.department|default:"Campus Community" }}</span></div>
+                <div class="mb-2"><span class="text-muted small">Registered Attendees:</span> <span class="d-block fw-bold">{{ reservation.participant_count }} Participants</span></div>
+            </div>
+
+            <div class="col-12">
+                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Schedule Specifications</h6>
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <span class="text-muted small d-block">Scheduled Date:</span>
+                        <strong>{{ reservation.start_time|date:"F d, Y (l)" }}</strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <span class="text-muted small d-block">Scheduled Interval:</span>
+                        <strong>{{ reservation.start_time|time:"H:i" }} &ndash; {{ reservation.end_time|time:"H:i" }}</strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <span class="text-muted small d-block">Total Duration:</span>
+                        <strong>{{ reservation.duration_hours }} Hours</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Event Purpose</h6>
+                <p class="text-dark bg-light p-3 rounded border small mb-0">{{ reservation.purpose }}</p>
+            </div>
+
+            <!-- Operational Event Record Details -->
+            {% if event_record %}
+                <div class="col-12">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Operational Execution Summary</h6>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <span class="text-muted small d-block">Check-In Timestamp:</span>
+                            <span>{{ event_record.check_in_time|date:"M d, Y H:i"|default:"Not checked in" }}</span>
+                            {% if event_record.checked_in_by %}
+                                <small class="text-muted d-block">By: {{ event_record.checked_in_by.username }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted small d-block">Actual Concluded Timestamp:</span>
+                            <span>{{ event_record.actual_end_time|date:"M d, Y H:i"|default:"Not recorded" }}</span>
+                            {% if event_record.completed_by %}
+                                <small class="text-muted d-block">By: {{ event_record.completed_by.username }}</small>
+                            {% endif %}
+                        </div>
+
+                        {% if event_record.completion_notes %}
+                            <div class="col-12">
+                                <span class="text-muted small d-block">Completion Notes:</span>
+                                <div class="p-2 bg-light rounded border small">{{ event_record.completion_notes }}</div>
+                            </div>
+                        {% endif %}
+
+                        {% if event_record.incident_notes %}
+                            <div class="col-12">
+                                <span class="text-danger small d-block fw-semibold">Recorded Incident Notes:</span>
+                                <div class="p-2 bg-warning-subtle rounded border border-warning small">{{ event_record.incident_notes }}</div>
+                            </div>
+                        {% endif %}
+
+                        {% if event_record.no_show_recorded_at %}
+                            <div class="col-12">
+                                <span class="text-danger small d-block fw-semibold">No-Show Record:</span>
+                                <div class="p-2 bg-danger-subtle rounded border border-danger small">
+                                    Recorded on {{ event_record.no_show_recorded_at|date:"M d, Y H:i" }}.
+                                    {% if event_record.no_show_notes %}Notes: {{ event_record.no_show_notes }}{% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Signature Verification Strip -->
+        <div class="border-top pt-4 mt-5">
+            <div class="row text-center">
+                <div class="col-6">
+                    <div class="pt-4 border-top border-secondary w-75 mx-auto"></div>
+                    <small class="text-muted d-block fw-semibold">Facility Administrator Signature</small>
+                    <small class="text-muted">{{ reservation.decision_by.display_name|default:"Authorized Personnel" }}</small>
+                </div>
+                <div class="col-6">
+                    <div class="pt-4 border-top border-secondary w-75 mx-auto"></div>
+                    <small class="text-muted d-block fw-semibold">Applicant / Event Organizer Signature</small>
+                    <small class="text-muted">{{ reservation.user.display_name }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

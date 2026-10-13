@@ -1,0 +1,134 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}Reservation {{ reservation.reference }} - Campus Portal{% endblock %}
+{% block portal_title %}Reservation: {{ reservation.reference }}{% endblock %}
+{% block portal_subtitle %}Event booking status, scheduled timeline, and venue details{% endblock %}
+
+{% block portal_actions %}
+<a href="{% url 'user_reservation_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to My Reservations
+</a>
+{% endblock %}
+
+{% block portal_content %}
+<div class="row g-4 justify-content-center">
+    <div class="col-lg-8">
+        <!-- Main Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fs-5 fw-bold font-monospace text-primary">{{ reservation.reference }}</span>
+                    <span class="badge bg-light text-muted border">Tracking ID</span>
+                </div>
+                <span class="status-badge status-{{ reservation.status|lower }} fs-6">
+                    {{ reservation.get_status_display }}
+                </span>
+            </div>
+
+            <div class="card-body p-4">
+                <h4 class="fw-bold text-dark mb-2">{{ reservation.title }}</h4>
+
+                <div class="p-3 bg-light rounded-3 mb-4 border">
+                    <span class="small fw-semibold text-muted text-uppercase d-block mb-1">Event Purpose</span>
+                    <p class="mb-0 text-dark">{{ reservation.purpose }}</p>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <div class="p-3 border rounded-3">
+                            <small class="text-muted d-block mb-1"><i class="bi bi-geo-alt me-1 text-primary"></i>Venue Space</small>
+                            <span class="fw-bold text-dark">{{ reservation.facility.name }}</span>
+                            <small class="text-muted d-block">{{ reservation.facility.code }} &bull; {{ reservation.facility.location }}</small>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-3 border rounded-3">
+                            <small class="text-muted d-block mb-1"><i class="bi bi-people me-1 text-primary"></i>Attendees</small>
+                            <span class="fw-bold text-dark">{{ reservation.participant_count }} Participants</span>
+                            <small class="text-muted d-block">Facility Capacity: {{ reservation.facility.capacity }}</small>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-3 border rounded-3">
+                            <small class="text-muted d-block mb-1"><i class="bi bi-calendar-event me-1 text-primary"></i>Scheduled Date</small>
+                            <span class="fw-bold text-dark">{{ reservation.start_time|date:"F d, Y" }}</span>
+                            <small class="text-muted d-block">{{ reservation.start_time|date:"l" }}</small>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="p-3 border rounded-3">
+                            <small class="text-muted d-block mb-1"><i class="bi bi-clock me-1 text-primary"></i>Reserved Time Window</small>
+                            <span class="fw-bold text-dark">{{ reservation.start_time|time:"H:i" }} &ndash; {{ reservation.end_time|time:"H:i" }}</span>
+                            <small class="text-muted d-block">Duration: {{ reservation.duration_hours }} Hours</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Administrative Decision Note (Rejection / Cancellation Reason) -->
+                {% if reservation.decision_reason %}
+                    <div class="p-3 mb-4 rounded-3 border {% if reservation.status == 'REJECTED' %}bg-danger-subtle border-danger-subtle text-danger{% else %}bg-light text-muted{% endif %}">
+                        <h6 class="fw-bold mb-1">
+                            <i class="bi bi-info-circle-fill me-1"></i>Administrative Notice:
+                        </h6>
+                        <p class="mb-0 small text-dark">{{ reservation.decision_reason }}</p>
+                    </div>
+                {% endif %}
+
+                <!-- Submission Date & Cancellation Button -->
+                <div class="pt-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <small class="text-muted">
+                        Submitted on {{ reservation.created_at|date:"M d, Y H:i" }}
+                    </small>
+
+                    {% if can_cancel %}
+                        <form method="post" action="{% url 'user_reservation_cancel' reservation_id=reservation.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this reservation? This action cannot be reversed.');">
+                                <i class="bi bi-x-circle me-1"></i> Cancel Reservation
+                            </button>
+                        </form>
+                    {% else %}
+                        {% if reservation.status in 'COMPLETED,CANCELLED,REJECTED,NO_SHOW' %}
+                            <span class="badge bg-light text-muted border">Concluded Reservation</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Change History (if rescheduled by admin) -->
+        {% if change_history %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="card-title mb-0 fw-bold text-dark">
+                        <i class="bi bi-clock-history me-2 text-warning"></i>Administrative Reschedule Notices
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush small">
+                        {% for c in change_history %}
+                            <li class="list-group-item p-3">
+                                <div class="text-muted mb-1">Rescheduled on {{ c.changed_at|date:"M d, Y H:i" }}</div>
+                                <div>
+                                    <span class="text-decoration-line-through text-muted me-2">
+                                        {{ c.previous_start_time|date:"M d H:i" }} - {{ c.previous_end_time|time:"H:i" }}
+                                    </span>
+                                    <span class="text-success fw-bold">
+                                        &rarr; {{ c.new_start_time|date:"M d H:i" }} - {{ c.new_end_time|time:"H:i" }}
+                                    </span>
+                                </div>
+                                <div class="mt-2 text-dark bg-light p-2 rounded border">
+                                    <strong>Reason:</strong> {{ c.reason }}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
