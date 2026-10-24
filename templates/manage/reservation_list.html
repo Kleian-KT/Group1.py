@@ -1,24 +1,24 @@
 {% extends 'manage/base_admin.html' %}
 
-{% block title %}Reservation Requests - Campus Admin{% endblock %}
+{% block title %}Reservation Requests - BulSU CARES Console{% endblock %}
 {% block page_title %}Reservation Requests{% endblock %}
-{% block page_subtitle %}Review incoming booking submissions, inspect conflicts, and manage approval queues{% endblock %}
+{% block page_subtitle %}Review incoming booking submissions, inspect conflicts, and manage approval queues.{% endblock %}
 
 {% block admin_content %}
-<!-- Search & Filter Panel -->
-<div class="filter-bar">
-    <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-3">
-            <label class="form-label small fw-semibold text-muted">Search Queue</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search reference, title, or applicant...">
+<!-- Search & Filter Panel strictly matching Stitch -->
+<div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/80 mb-6">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+        <div class="md:col-span-3 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Search Queue</label>
+            <div class="relative rounded-lg shadow-sm">
+                <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
+                <input type="text" name="q" value="{{ search_query }}" class="block w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all" placeholder="Search reference, title, or applicant...">
             </div>
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label small fw-semibold text-muted">Filter Status</label>
-            <select name="status" class="form-select">
+        <div class="md:col-span-3 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Filter Status</label>
+            <select name="status" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                 <option value="">All Statuses</option>
                 {% for code, label in statuses %}
                     <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
@@ -26,9 +26,9 @@
             </select>
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label small fw-semibold text-muted">Facility</label>
-            <select name="facility" class="form-select">
+        <div class="md:col-span-3 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Facility</label>
+            <select name="facility" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                 <option value="">All Facilities</option>
                 {% for fac in facilities %}
                     <option value="{{ fac.id }}" {% if facility_id == fac.id|stringformat:"s" %}selected{% endif %}>{{ fac.code }} - {{ fac.name }}</option>
@@ -36,115 +36,151 @@
             </select>
         </div>
 
-        <div class="col-md-2">
-            <label class="form-label small fw-semibold text-muted">Date</label>
-            <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+        <div class="md:col-span-2 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Schedule Date</label>
+            <input type="date" name="date" value="{{ date_filter }}" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
         </div>
 
-        <div class="col-md-1 d-flex gap-1">
-            <button type="submit" class="btn btn-navy flex-grow-1" title="Filter"><i class="bi bi-funnel"></i></button>
+        <div class="md:col-span-1 flex items-center gap-1.5">
+            <button type="submit" class="flex-grow inline-flex items-center justify-center p-2 rounded-lg bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors" title="Apply Filters">
+                <span class="material-symbols-outlined text-[18px]">filter_list</span>
+            </button>
             {% if search_query or status_filter or facility_id or date_filter %}
-                <a href="{% url 'admin_reservation_list' %}" class="btn btn-outline-secondary" title="Reset"><i class="bi bi-x-lg"></i></a>
+                <a href="{% url 'admin_reservation_list' %}" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors" title="Reset filters">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </a>
             {% endif %}
         </div>
     </form>
 </div>
 
 <!-- Reservation Queue Table -->
-<div class="table-responsive table-custom shadow-sm mb-4">
-    <table class="table table-hover align-middle mb-0">
-        <thead>
-            <tr>
-                <th>Reference</th>
-                <th>Applicant</th>
-                <th>Facility</th>
-                <th>Event Title</th>
-                <th>Requested Schedule</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th class="text-end">Review</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in page_obj %}
-                <tr>
-                    <td>
-                        <span class="fw-bold font-monospace text-primary">{{ r.reference }}</span>
-                    </td>
-                    <td>
-                        <div class="fw-semibold text-dark">{{ r.user.display_name }}</div>
-                        <small class="text-muted">@{{ r.user.username }}</small>
-                    </td>
-                    <td>
-                        <div class="fw-semibold text-dark">{{ r.facility.name }}</div>
-                        <small class="text-muted">{{ r.facility.code }} &bull; Cap: {{ r.facility.capacity }}</small>
-                    </td>
-                    <td>
-                        <div class="fw-bold text-dark">{{ r.title }}</div>
-                        <small class="text-muted"><i class="bi bi-people me-1"></i>{{ r.participant_count }} attendees</small>
-                    </td>
-                    <td>
-                        <div class="fw-semibold">{{ r.start_time|date:"M d, Y" }}</div>
-                        <small class="text-muted">{{ r.start_time|time:"H:i" }} - {{ r.end_time|time:"H:i" }} ({{ r.duration_hours }}h)</small>
-                    </td>
-                    <td>
-                        <small class="text-muted">{{ r.created_at|date:"M d, Y H:i" }}</small>
-                    </td>
-                    <td>
-                        <span class="status-badge status-{{ r.status|lower }}">{{ r.get_status_display }}</span>
-                    </td>
-                    <td class="text-end">
-                        <a href="{% url 'admin_reservation_detail' reservation_id=r.id %}" class="btn btn-primary btn-sm px-3">
-                            <i class="bi bi-search me-1"></i> Review
-                        </a>
-                    </td>
+<div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200/80 mb-6">
+    <div class="p-5 sm:p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/60">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-[#6b1414]/10 text-bulsu-maroon flex items-center justify-center">
+                <span class="material-symbols-outlined text-[20px]">event_available</span>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Campus Venue Booking Submissions</h3>
+                <p class="text-xs text-slate-500">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} total requests)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-slate-600 text-xs uppercase font-bold tracking-wider border-b border-slate-200">
+                    <th class="py-3.5 px-6 text-left">Reference</th>
+                    <th class="py-3.5 px-6 text-left">Applicant</th>
+                    <th class="py-3.5 px-6 text-left">Facility</th>
+                    <th class="py-3.5 px-6 text-left">Event Details</th>
+                    <th class="py-3.5 px-6 text-left">Requested Schedule</th>
+                    <th class="py-3.5 px-6 text-left">Submitted</th>
+                    <th class="py-3.5 px-6 text-left">Status</th>
+                    <th class="py-3.5 px-6 text-center">Action</th>
                 </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="8">
-                        <div class="empty-state">
-                            <i class="bi bi-inbox empty-state-icon"></i>
-                            <div class="empty-state-title">No Reservations Found</div>
-                            <p class="empty-state-text">No booking records match the selected filters.</p>
-                            <a href="{% url 'admin_reservation_list' %}" class="btn btn-outline-secondary btn-sm">Reset Filters</a>
-                        </div>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-800">
+                {% for r in page_obj %}
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <span class="font-mono text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-800 font-bold border border-slate-200">
+                                {{ r.reference }}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-slate-900 text-sm">{{ r.user.display_name }}</span>
+                                <span class="text-xs text-slate-500">@{{ r.user.username }}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] text-bulsu-maroon">location_on</span>
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-xs text-slate-900">{{ r.facility.name }}</span>
+                                    <span class="text-[11px] text-slate-500 font-mono">{{ r.facility.code }} &bull; Cap: {{ r.facility.capacity }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left">
+                            <div class="flex flex-col max-w-xs gap-0.5">
+                                <span class="font-semibold text-slate-900 text-xs">{{ r.title }}</span>
+                                <span class="text-slate-500 text-[11px] font-mono">{{ r.participant_count }} attendees</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="font-mono font-medium text-xs text-slate-900">{{ r.start_time|date:"M d, Y" }}</span>
+                                <span class="font-mono text-[11px] text-slate-500">{{ r.start_time|time:"H:i" }} – {{ r.end_time|time:"H:i" }} ({{ r.duration_hours }}h)</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <span class="font-mono text-xs text-slate-500">{{ r.created_at|date:"M d, H:i" }}</span>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            {% if r.status == 'APPROVED' %}
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">APPROVED</span>
+                            {% elif r.status == 'COMPLETED' %}
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">COMPLETED</span>
+                            {% elif r.status == 'REJECTED' or r.status == 'CANCELLED' %}
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">{{ r.get_status_display }}</span>
+                            {% else %}
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">{{ r.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-6 text-center whitespace-nowrap">
+                            <a href="{% url 'admin_reservation_detail' reservation_id=r.id %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors">
+                                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                <span>Review</span>
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-10 text-slate-400">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <span class="material-symbols-outlined text-4xl text-slate-300">event_busy</span>
+                                <p class="font-bold text-slate-700 text-sm">No Reservation Requests Found</p>
+                                <p class="text-xs text-slate-400">Adjust your status filter or query keywords to locate entries.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<!-- Pagination -->
+<!-- Modern Pagination -->
 {% if page_obj.has_other_pages %}
-    <nav aria-label="Reservation queue pagination">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&status={{ status_filter }}&facility={{ facility_id }}&date={{ date_filter }}">Previous</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">Previous</span></li>
-            {% endif %}
+    <div class="flex justify-center items-center gap-1.5 py-2">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&status={{ status_filter }}&facility={{ facility_id }}&date={{ date_filter }}" 
+               class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+                Previous
+            </a>
+        {% endif %}
 
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}&q={{ search_query }}&status={{ status_filter }}&facility={{ facility_id }}&date={{ date_filter }}">{{ num }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&status={{ status_filter }}&facility={{ facility_id }}&date={{ date_filter }}">Next</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <span class="px-3 py-1.5 rounded-lg bg-[#4b0004] text-white text-xs font-bold shadow-sm">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}&q={{ search_query }}&status={{ status_filter }}&facility={{ facility_id }}&date={{ date_filter }}" 
+                   class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                    {{ num }}
+                </a>
             {% endif %}
-        </ul>
-    </nav>
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&status={{ status_filter }}&facility={{ facility_id }}&date={{ date_filter }}" 
+               class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+                Next
+            </a>
+        {% endif %}
+    </div>
 {% endif %}
 {% endblock %}

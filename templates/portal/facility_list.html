@@ -1,128 +1,310 @@
 {% extends 'portal/base_portal.html' %}
 
-{% block title %}Browse Facilities - Campus Portal{% endblock %}
+{% block title %}Browse Campus Facilities - BulSU CARES Portal{% endblock %}
 {% block portal_title %}Browse Campus Facilities{% endblock %}
-{% block portal_subtitle %}Discover lecture halls, computer labs, auditoriums, and collaborative study rooms{% endblock %}
+{% block portal_subtitle %}Explore campus venues and view real-time time slot availability.{% endblock %}
 
 {% block portal_content %}
-<!-- Search & Filter Panel -->
-<div class="filter-bar">
-    <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-5">
-            <label class="form-label small fw-semibold text-muted">Search Facilities</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by facility name, location, or code...">
+<!-- Search & Multi-Parameter Filter Card strictly matching Stitch Layout -->
+<div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-sm mb-8">
+    <form method="get" id="facilityFilterForm" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+        <!-- Search Facility Input -->
+        <div class="md:col-span-5 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700 flex items-center gap-1.5" for="filter-search">
+                <span class="material-symbols-outlined text-[15px] text-[#4a0808]">search</span>
+                <span>Search Facility</span>
+            </label>
+            <div class="relative">
+                <input type="text" 
+                       id="filter-search" 
+                       name="q" 
+                       value="{{ search_query }}" 
+                       class="w-full h-10 pl-9 pr-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4a0808]/20 focus:border-[#4a0808] transition-all" 
+                       placeholder="e.g. Valencia Hall, LAB-301, Boardroom...">
+                <span class="material-symbols-outlined absolute left-2.5 top-2.5 text-[18px] text-slate-400 pointer-events-none">apartment</span>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label small fw-semibold text-muted">Category</label>
-            <select name="category" class="form-select">
-                <option value="">All Categories</option>
+        <!-- Classification / Category Dropdown -->
+        <div class="md:col-span-4 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700 flex items-center gap-1.5" for="filter-category">
+                <span class="material-symbols-outlined text-[15px] text-amber-600">category</span>
+                <span>Classification</span>
+            </label>
+            <select id="filter-category" 
+                    name="category" 
+                    onchange="this.form.submit()"
+                    class="w-full h-10 px-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4a0808]/20 focus:border-[#4a0808] transition-all cursor-pointer">
+                <option value="">All Classifications</option>
                 {% for cat in categories %}
                     <option value="{{ cat.id }}" {% if category_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
                 {% endfor %}
             </select>
         </div>
 
-        <div class="col-md-2">
-            <label class="form-label small fw-semibold text-muted">Minimum Capacity</label>
-            <input type="number" name="capacity" value="{{ min_capacity }}" min="1" class="form-control" placeholder="e.g. 50">
-        </div>
+        <!-- Min. Capacity & Actions -->
+        <div class="md:col-span-3 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700 flex items-center gap-1.5" for="filter-capacity">
+                <span class="material-symbols-outlined text-[15px] text-blue-600">groups</span>
+                <span>Min. Capacity</span>
+            </label>
+            <div class="flex items-center gap-2">
+                <input type="number" 
+                       id="filter-capacity" 
+                       name="capacity" 
+                       value="{{ min_capacity }}" 
+                       min="1" 
+                       class="w-full h-10 px-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4a0808]/20 focus:border-[#4a0808] transition-all" 
+                       placeholder="e.g. 50">
+                
+                <button type="submit" 
+                        class="h-10 px-4 rounded-lg bg-[#4a0808] hover:bg-[#6b1414] text-white text-xs font-semibold shadow-sm transition-colors flex items-center justify-center gap-1 shrink-0" 
+                        title="Apply Filter">
+                    <span class="material-symbols-outlined text-[16px]">filter_list</span>
+                    <span>Search</span>
+                </button>
 
-        <div class="col-md-2 d-flex gap-2">
-            <button type="submit" class="btn btn-navy flex-grow-1">Search</button>
-            {% if search_query or category_id or min_capacity %}
-                <a href="{% url 'user_facility_list' %}" class="btn btn-outline-secondary" title="Reset"><i class="bi bi-x-lg"></i></a>
-            {% endif %}
+                {% if search_query or category_id or min_capacity %}
+                    <a href="{% url 'user_facility_list' %}" 
+                       class="h-10 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition-colors flex items-center justify-center shrink-0" 
+                       title="Reset Filters">
+                        <span class="material-symbols-outlined text-[16px]">close</span>
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </form>
 </div>
 
-<!-- Facilities Grid -->
-<div class="row g-4 mb-4">
+<!-- Active Facilities Catalog Grid: 2-Column Wide Responsive Grid strictly matching Stitch -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     {% for f in page_obj %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm h-100 d-flex flex-column hover-shadow">
-                <div class="card-body p-4 d-flex flex-column">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge bg-primary-subtle text-primary font-monospace">{{ f.code }}</span>
-                        <span class="badge bg-light text-muted border">{{ f.category.name }}</span>
+        <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between overflow-hidden border border-slate-200/80">
+            <div>
+                <!-- Top Photo Banner -->
+                <div class="relative h-52 w-full overflow-hidden bg-slate-900 rounded-t-xl group">
+                    <!-- Standard lazy-loaded image tag with high-res venue fallback -->
+                    <img src="{{ f.image_url }}" 
+                         alt="{{ f.name }}" 
+                         loading="lazy" 
+                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    
+                    <!-- Dark Gradient Overlay -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent"></div>
+
+                    <!-- Top-Left Split Badge (Code + Category) -->
+                    <div class="absolute top-3 left-3 z-10 flex items-center shadow-sm rounded-md overflow-hidden">
+                        <span class="px-2.5 py-1 {{ f.badge_color }} font-mono text-xs font-bold uppercase tracking-wider">
+                            {{ f.code }}
+                        </span>
+                        <span class="px-2.5 py-1 bg-white/95 backdrop-blur-sm text-slate-800 text-xs font-semibold border-l border-slate-200/60">
+                            {{ f.category.name }}
+                        </span>
                     </div>
 
-                    <h5 class="fw-bold text-dark mb-1">{{ f.name }}</h5>
-                    <p class="small text-muted mb-3 flex-grow-1">
-                        {{ f.description|truncatechars:90|default:"Well-maintained campus facility equipped for student and faculty events." }}
+                    <!-- Bottom Facility Title & Single Horizontal Metadata Row -->
+                    <div class="absolute inset-x-0 bottom-0 p-4 pt-12 flex flex-col justify-end">
+                        <h2 class="text-xl font-bold text-white mb-1 drop-shadow-sm font-display leading-tight truncate">
+                            {{ f.name }}
+                        </h2>
+                        <div class="flex flex-wrap items-center gap-3 text-xs text-gray-200">
+                            <span class="flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[15px] text-amber-400">pin_drop</span>
+                                <span>{{ f.location }}</span>
+                            </span>
+                            <span>&bull;</span>
+                            <span class="flex items-center gap-1 font-mono">
+                                <span class="material-symbols-outlined text-[15px] text-amber-400">groups</span>
+                                <span>{{ f.capacity }} PAX Capacity</span>
+                            </span>
+                            <span>&bull;</span>
+                            <span class="flex items-center gap-1 font-mono">
+                                <span class="material-symbols-outlined text-[15px] text-amber-400">schedule</span>
+                                <span>{{ f.default_open_time|time:"H:i" }} &ndash; {{ f.default_close_time|time:"H:i" }} Daily</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Body: Description & Amenities & Slot Availability -->
+                <div class="p-5 flex flex-col">
+                    <!-- Facility Description -->
+                    <p class="text-sm text-slate-600 mb-3 leading-relaxed line-clamp-2">
+                        {{ f.description|default:"Well-maintained campus venue equipped for university events, student assemblies, and collegiate functions." }}
                     </p>
 
-                    <div class="p-3 bg-light rounded-3 small text-muted mb-3">
-                        <div class="mb-1"><i class="bi bi-geo-alt me-1 text-primary"></i><strong>Location:</strong> {{ f.location }}</div>
-                        <div class="mb-1"><i class="bi bi-people me-1 text-primary"></i><strong>Capacity:</strong> {{ f.capacity }} Persons</div>
-                        <div><i class="bi bi-clock me-1 text-primary"></i><strong>Hours:</strong> {{ f.default_open_time|time:"H:i" }} &ndash; {{ f.default_close_time|time:"H:i" }}</div>
+                    <!-- Key Amenities -->
+                    <div class="mb-2">
+                        <span class="block text-[11px] font-bold tracking-wider text-slate-400 uppercase mb-2">Key Amenities</span>
+                        {% if f.facility_amenities.all %}
+                            <div class="flex flex-wrap gap-1.5">
+                                {% for fa in f.facility_amenities.all|slice:":4" %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200/60">
+                                        <i class="bi {{ fa.amenity.icon }} text-[#4a0808]"></i>
+                                        <span>{{ fa.amenity.name }}</span>
+                                    </span>
+                                {% endfor %}
+                                {% if f.facility_amenities.all.count > 4 %}
+                                    <span class="px-2 py-1 rounded-md bg-slate-100 text-slate-500 text-xs font-medium">
+                                        +{{ f.facility_amenities.all.count|add:"-4" }} more
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <span class="text-xs text-slate-400 italic">Standard campus facilities equipment</span>
+                        {% endif %}
                     </div>
 
-                    <!-- Amenities list preview -->
-                    {% if f.facility_amenities.all %}
-                        <div class="mb-3 d-flex flex-wrap gap-1">
-                            {% for fa in f.facility_amenities.all|slice:":3" %}
-                                <span class="badge bg-white text-muted border small">
-                                    <i class="bi {{ fa.amenity.icon }} me-1 text-primary"></i>{{ fa.amenity.name }}
-                                </span>
-                            {% endfor %}
-                            {% if f.facility_amenities.all.count > 3 %}
-                                <span class="badge bg-light text-muted">+{{ f.facility_amenities.all.count|add:"-3" }} more</span>
-                            {% endif %}
+                    <!-- Embedded "Today's Slot Availability" Box -->
+                    <div class="bg-slate-50 border border-slate-200/70 rounded-lg p-3.5 my-3">
+                        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/60">
+                            <span class="font-semibold text-xs text-slate-900 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px] text-[#4a0808]">event_available</span>
+                                <span>Today's Slot Availability</span>
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-slate-500 font-mono">{{ today|date:"M d, Y" }}</span>
+                                <a href="{% url 'user_facility_detail' facility_id=f.id %}" 
+                                   class="text-[11px] font-semibold text-[#4a0808] hover:text-[#6b1414] hover:underline flex items-center gap-0.5" 
+                                   title="Inspect full date-picker availability">
+                                    <span>Full Schedule</span>
+                                    <span class="material-symbols-outlined text-[12px]">arrow_forward</span>
+                                </a>
+                            </div>
                         </div>
-                    {% endif %}
 
-                    <div class="d-flex gap-2 pt-2 border-top">
-                        <a href="{% url 'user_facility_detail' facility_id=f.id %}" class="btn btn-outline-primary btn-sm flex-grow-1">
-                            <i class="bi bi-calendar2-range me-1"></i> Availability
-                        </a>
-                        <a href="{% url 'user_reservation_create' %}?facility={{ f.id }}" class="btn btn-navy btn-sm px-3">
-                            Reserve
-                        </a>
+                        {% if f.is_today_closed %}
+                            <div class="p-2.5 rounded bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] text-rose-600">block</span>
+                                <span>Facility is closed today according to campus schedule.</span>
+                            </div>
+                        {% elif f.today_slots %}
+                            <!-- 2-Column Grid of Slot Preview Cards -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {% for slot in f.today_slots %}
+                                    <div class="p-2 rounded bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
+                                        <div class="flex flex-col">
+                                            <span class="font-mono text-xs font-bold text-slate-800">
+                                                {{ slot.start_time|time:"H:i" }} &ndash; {{ slot.end_time|time:"H:i" }}
+                                            </span>
+                                            <span class="text-[11px] {% if slot.is_available %}text-emerald-700{% else %}text-slate-500{% endif %} font-medium flex items-center gap-1 mt-0.5">
+                                                {% if slot.is_available %}
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                    <span>Available</span>
+                                                {% else %}
+                                                    <span class="material-symbols-outlined text-[12px]">lock</span>
+                                                    <span>Unavailable &bull; {{ slot.reason }}</span>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <span class="px-2 py-0.5 rounded text-[11px] font-bold {% if slot.is_available %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                                            {% if slot.is_available %}Open{% else %}Booked{% endif %}
+                                        </span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <!-- Clean fallback derived from facility operating hours -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div class="p-2 rounded bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
+                                    <div class="flex flex-col">
+                                        <span class="font-mono text-xs font-bold text-slate-800">
+                                            {{ f.default_open_time|time:"H:i" }} &ndash; 12:00
+                                        </span>
+                                        <span class="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-0.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                            <span>Available</span>
+                                        </span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        Open
+                                    </span>
+                                </div>
+                                <div class="p-2 rounded bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
+                                    <div class="flex flex-col">
+                                        <span class="font-mono text-xs font-bold text-slate-800">
+                                            12:00 &ndash; {{ f.default_close_time|time:"H:i" }}
+                                        </span>
+                                        <span class="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-0.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                            <span>Available</span>
+                                        </span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        Open
+                                    </span>
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+
+            <!-- Card Footer: Full-Width BulSU Maroon Request Reservation Button -->
+            <div class="p-5 pt-0">
+                <a href="{% url 'user_reservation_create' %}?facility={{ f.id }}" 
+                   class="w-full py-2.5 px-4 rounded-lg bg-[#6b1111] hover:bg-[#520c0c] text-white font-semibold text-xs transition-colors shadow-sm flex items-center justify-center gap-2 text-center">
+                    <span class="material-symbols-outlined text-[16px]">bookmark_add</span>
+                    <span>Request Reservation</span>
+                </a>
+            </div>
         </div>
     {% empty %}
-        <div class="col-12">
-            <div class="empty-state">
-                <i class="bi bi-buildings empty-state-icon"></i>
-                <div class="empty-state-title">No Facilities Found</div>
-                <p class="empty-state-text">No active facilities matched your search or capacity filter.</p>
-                <a href="{% url 'user_facility_list' %}" class="btn btn-outline-secondary btn-sm">Clear Search</a>
+        <div class="col-span-1 lg:col-span-2">
+            <div class="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
+                <div class="flex flex-col items-center justify-center space-y-2">
+                    <span class="material-symbols-outlined text-4xl text-slate-300">domain_disabled</span>
+                    <p class="font-bold text-slate-800 text-base">No Matching Facilities Found</p>
+                    <p class="text-xs text-slate-500 max-w-sm">We couldn't find any campus facilities matching your search query or capacity filters.</p>
+                    <a href="{% url 'user_facility_list' %}" class="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors mt-2 shadow-2xs">
+                        Clear Filters
+                    </a>
+                </div>
             </div>
         </div>
     {% endfor %}
 </div>
 
-<!-- Pagination -->
+<!-- Modern Pagination -->
 {% if page_obj.has_other_pages %}
-    <nav aria-label="Browse facilities pagination">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&category={{ category_id }}&capacity={{ min_capacity }}">Previous</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">Previous</span></li>
-            {% endif %}
+    <div class="flex justify-center items-center gap-1.5 py-4">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&category={{ category_id }}&capacity={{ min_capacity }}" 
+               class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+                Previous
+            </a>
+        {% endif %}
 
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ search_query }}&category={{ category_id }}&capacity={{ min_capacity }}">{{ num }}</a></li>
-                {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&category={{ category_id }}&capacity={{ min_capacity }}">Next</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <span class="px-3 py-1.5 rounded-lg bg-[#4a0808] text-white text-xs font-bold shadow-sm">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}&q={{ search_query }}&category={{ category_id }}&capacity={{ min_capacity }}" 
+                   class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                    {{ num }}
+                </a>
             {% endif %}
-        </ul>
-    </nav>
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&category={{ category_id }}&capacity={{ min_capacity }}" 
+               class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+                Next
+            </a>
+        {% endif %}
+    </div>
 {% endif %}
+
+<script>
+    (function() {
+        const searchInput = document.getElementById('filter-search');
+        if (searchInput) {
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    this.form.submit();
+                }
+            });
+        }
+    })();
+</script>
 {% endblock %}

@@ -1,67 +1,231 @@
 {% extends 'base.html' %}
 
-{% block title %}Sign In - Campus Facility Reservation System{% endblock %}
+{% block title %}Sign In - BulSU CARES Operations &amp; Reservation Portal{% endblock %}
 
 {% block layout_content %}
-<div class="min-vh-100 d-flex align-items-center justify-content-center py-5" style="background: linear-gradient(135deg, #0f2942 0%, #1e3a5f 100%);">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5 col-xl-4">
-                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white text-center pt-4 pb-3 border-0">
-                        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 64px; height: 64px;">
-                            <i class="bi bi-building-check fs-2"></i>
-                        </div>
-                        <h4 class="fw-bold text-dark mb-1">Campus Facility Portal</h4>
-                        <p class="text-muted small mb-0">Sign in to manage or submit reservations</p>
-                    </div>
+<div class="min-h-screen flex flex-col lg:flex-row w-full overflow-hidden bg-[#0d0d10] text-zinc-100 font-sans antialiased selection:bg-amber-500 selection:text-black">
+    <!-- BEGIN: LeftShowcaseSection (Campus & Facilities Showcase strictly from Stitch) -->
+    <section class="w-full lg:w-[58%] relative flex flex-col justify-between p-8 sm:p-12 lg:p-14 bg-gradient-to-br from-[#1c0808] via-[#120505] to-[#0d0d10] overflow-hidden border-b lg:border-b-0 lg:border-r border-zinc-800/60" data-purpose="facilities-showcase">
+        <!-- Background Ambient Glow & Patterns -->
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-[#6b1414]/30 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-10 right-10 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-                    <div class="card-body p-4 pt-2">
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show small py-2" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-
-                        <form method="post" action="{% url 'login' %}">
-                            {% csrf_token %}
-
-                            <div class="mb-3">
-                                <label for="id_username" class="form-label fw-semibold small text-muted">Username</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
-                                    <input type="text" name="username" id="id_username" class="form-control border-start-0" required autofocus placeholder="Enter your username">
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="id_password" class="form-label fw-semibold small text-muted">Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
-                                    <input type="password" name="password" id="id_password" class="form-control border-start-0" required placeholder="Enter your password">
-                                </div>
-                            </div>
-
-                            <button type="submit" class="btn btn-navy w-100 py-2 fw-semibold shadow-sm mb-3">
-                                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
-                            </button>
-                        </form>
-
-                        <div class="text-center pt-2 border-top">
-                            <span class="small text-muted">Don't have an account?</span>
-                            <a href="{% url 'register' %}" class="small fw-semibold ms-1">Create Account</a>
-                        </div>
-                    </div>
+        <!-- Top Branding Header -->
+        <header class="relative z-10 flex items-center justify-between" data-purpose="brand-header">
+            <div class="flex items-center gap-3.5 group">
+                <!-- Logo Emblem -->
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6b1414] to-[#4a0808] p-2 shadow-lg shadow-black/40 border border-amber-400/30 flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
+                    <span class="material-symbols-outlined text-amber-300 text-2xl">account_balance</span>
                 </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl font-bold tracking-tight text-white font-display">BulSU <span class="text-amber-400">CARES</span></span>
+                    </div>
+                    <p class="text-xs text-zinc-400 font-medium tracking-wide">Campus Facilities Reservation &amp; Operations</p>
+                </div>
+            </div>
+            <div class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Official BulSU Portal
+            </div>
+        </header>
 
-                <div class="text-center mt-3 text-white-50 small">
-                    Campus Facility Management System &bull; 2026
+        <!-- Center Content: Headline & Stacked Facility Cards -->
+        <div class="relative z-10 my-auto py-10 flex flex-col items-center">
+            <!-- Headline Block -->
+            <div class="max-w-xl text-center mb-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold mb-4 shadow-sm">
+                    <span class="material-symbols-outlined text-[15px] text-amber-400">auto_awesome</span>
+                    Streamlined Unified Campus Logistics
+                </div>
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight font-display">
+                    See everyday moments &amp; reserve premier venues for your 
+                    <span class="text-amber-400">campus events.</span>
+                </h1>
+                <p class="text-zinc-400 mt-3.5 text-sm sm:text-base leading-relaxed">
+                    Bulacan State University's official portal for faculty, student organizations, and college units to schedule, monitor, and manage spaces effortlessly.
+                </p>
+            </div>
+
+            <!-- Layered Card Showcase (Strictly from Stitch) -->
+            <div class="relative w-full max-w-lg h-[340px] flex items-center justify-center select-none" data-purpose="stacked-facility-cards">
+                <div class="relative w-full max-w-md h-[340px] flex items-center justify-center select-none">
+                    <!-- Valencia Hall Card -->
+                    <div class="absolute -left-2 sm:left-1 bottom-6 w-56 sm:w-64 h-72 rounded-2xl overflow-hidden border border-zinc-700/80 shadow-2xl -rotate-6 transform hover:-translate-y-2 hover:rotate-0 transition-all duration-300 z-10 bg-zinc-900 group">
+                        <div class="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-950 flex flex-col justify-end p-4 relative overflow-hidden">
+                            <div class="absolute inset-0 bg-cover bg-center opacity-60 group-hover:scale-105 transition-transform duration-500" style="background-image: url('https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80');"></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent"></div>
+                            <div class="relative z-10">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-amber-400">Grand Hall</span>
+                                <p class="text-sm font-semibold text-white drop-shadow font-display">Valencia Hall</p>
+                                <span class="text-[11px] text-zinc-300 flex items-center gap-1 mt-0.5">
+                                    <span class="material-symbols-outlined text-amber-400 text-[14px]">schedule</span> Multi-purpose Venue
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campus Amphitheater Card -->
+                    <div class="absolute -right-2 sm:right-1 bottom-6 w-56 sm:w-64 h-72 rounded-2xl overflow-hidden border border-zinc-700/80 shadow-2xl rotate-6 transform hover:-translate-y-2 hover:rotate-0 transition-all duration-300 z-10 bg-zinc-900 group">
+                        <div class="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-950 flex flex-col justify-end p-4 relative overflow-hidden">
+                            <div class="absolute inset-0 bg-cover bg-center opacity-60 group-hover:scale-105 transition-transform duration-500" style="background-image: url('https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=600&q=80');"></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent"></div>
+                            <div class="relative z-10">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-amber-400">Auditorium</span>
+                                <p class="text-sm font-semibold text-white drop-shadow font-display">Campus Amphitheater</p>
+                                <span class="text-[11px] text-zinc-300 flex items-center gap-1 mt-0.5">
+                                    <span class="material-symbols-outlined text-amber-400 text-[14px]">groups</span> Tiered Seating
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BulSU E-Library Complex (Center Card) -->
+                    <div class="relative z-20 w-64 sm:w-72 h-80 rounded-2xl overflow-hidden border border-zinc-600 shadow-2xl shadow-black/80 transform hover:scale-[1.02] transition-transform duration-300 bg-zinc-900 group">
+                        <div class="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-950 flex flex-col justify-end p-4 relative overflow-hidden">
+                            <div class="absolute inset-0 bg-cover bg-center opacity-70 group-hover:scale-105 transition-transform duration-500" style="background-image: url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=600&q=80');"></div>
+                            <div class="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2.5 py-1 rounded-full border border-zinc-700 text-[11px] font-medium text-emerald-300 flex items-center gap-1.5 z-10">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Open Study
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent"></div>
+                            <div class="relative z-10">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-amber-400">Academic Hub</span>
+                                <h3 class="text-base font-bold text-white drop-shadow leading-tight font-display">BulSU E-Library Complex</h3>
+                                <p class="text-[11px] text-zinc-300 mt-0.5">Modern Study Pods &amp; Digital Workstations</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Institutional Footer Note -->
+        <footer class="relative z-10 pt-4 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 gap-2" data-purpose="left-footer">
+            <p>Physical Facilities and Logistics Management Office (PFLMO)</p>
+            <p class="text-zinc-600 font-mono">Bulacan State University © 2026</p>
+        </footer>
+    </section>
+    <!-- END: LeftShowcaseSection -->
+
+    <!-- BEGIN: RightAuthSection (Authentication Panel strictly from Stitch) -->
+    <main class="w-full lg:w-[42%] flex flex-col justify-center items-center p-6 sm:p-10 lg:p-14 bg-white text-zinc-900 relative" data-purpose="authentication-panel">
+        <div class="w-full max-w-md mx-auto space-y-6">
+            <!-- Auth Title Block -->
+            <div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-bulsu-maroon border border-red-200 text-xs font-semibold uppercase tracking-wider mb-2">
+                    <span class="material-symbols-outlined text-[14px]">lock</span>
+                    Institutional Login
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 font-display">Sign In</h2>
+                <p class="text-zinc-500 text-sm mt-1.5 leading-relaxed">Sign in with your institutional BulSU account to access campus spaces.</p>
+            </div>
+
+            <!-- Messages / Alerts -->
+            {% if messages %}
+                <div class="space-y-2">
+                    {% for message in messages %}
+                        <div class="p-3.5 rounded-xl border text-sm flex items-center justify-between {% if message.tags == 'error' %}bg-rose-50 border-rose-200 text-rose-800{% else %}bg-emerald-50 border-emerald-200 text-emerald-800{% endif %} shadow-sm" role="alert">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-[18px]">
+                                    {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
+                                </span>
+                                <span>{{ message }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Login Form Element -->
+            <form action="{% url 'login' %}" method="POST" class="space-y-4" data-purpose="login-form">
+                {% csrf_token %}
+
+                <!-- Username / Identifier Input -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-semibold text-zinc-700" for="id_username">Username / Student ID / Email</label>
+                    <div class="relative rounded-xl shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                            <span class="material-symbols-outlined text-[18px]">person</span>
+                        </div>
+                        <input class="block w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-300 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all" 
+                               id="id_username" 
+                               name="username" 
+                               placeholder="e.g. admin or juan.delacruz" 
+                               required 
+                               autofocus 
+                               type="text">
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-zinc-700" for="id_password">Password</label>
+                    </div>
+                    <div class="relative rounded-xl shadow-sm" data-purpose="password-field-wrapper">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                            <span class="material-symbols-outlined text-[18px]">lock</span>
+                        </div>
+                        <input class="block w-full pl-10 pr-11 py-3 bg-zinc-50 border border-zinc-300 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all" 
+                               id="id_password" 
+                               name="password" 
+                               placeholder="Enter your security credential" 
+                               required 
+                               type="password">
+                        <!-- Eye Toggle Button -->
+                        <button aria-label="Toggle password visibility" 
+                                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-600 focus:outline-none" 
+                                id="toggle-password" 
+                                type="button">
+                            <span class="material-symbols-outlined text-[18px]" id="toggle-icon">visibility</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Primary Submit Button -->
+                <button class="w-full mt-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-bulsu-maroon to-bulsu-maroondark hover:from-[#7e1717] hover:to-[#5c0a0a] text-white font-semibold text-sm shadow-lg shadow-red-950/20 border border-red-500/30 flex items-center justify-center gap-2 transition-all transform active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-500" 
+                        type="submit">
+                    <span>Sign In to BulSU CARES</span>
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </button>
+            </form>
+
+            <!-- Registration & Access Request -->
+            <div class="rounded-xl bg-zinc-50 border border-zinc-200 p-3.5 text-center text-xs text-zinc-600">
+                <span>Don't have an active reservation account?</span>
+                <a class="font-bold text-bulsu-maroon hover:underline ml-1 transition-colors" href="{% url 'register' %}">
+                    Request Access / Register
+                </a>
+            </div>
+
+            <!-- Institutional Guidelines / Help Links -->
+            <div class="pt-2 text-center text-[11px] text-zinc-500">
+                <div class="flex items-center justify-center gap-3 text-zinc-500 text-[11px]">
+                    <span class="hover:underline cursor-pointer">Acceptable Use Policy</span>
+                    <span>•</span>
+                    <span class="hover:underline cursor-pointer">PFLMO Guidelines</span>
+                    <span>•</span>
+                    <span class="hover:underline cursor-pointer">Helpdesk</span>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- END: RightAuthSection -->
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('id_password');
+    const toggleIcon = document.getElementById('toggle-icon');
+
+    if (toggleBtn && passwordInput && toggleIcon) {
+        toggleBtn.addEventListener('click', () => {
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+            toggleIcon.textContent = isPassword ? 'visibility_off' : 'visibility';
+        });
+    }
+});
+</script>
 {% endblock %}

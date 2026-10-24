@@ -1,104 +1,111 @@
 {% extends 'manage/base_admin.html' %}
 
-{% block title %}{{ action_title }} - Campus Admin{% endblock %}
+{% block title %}{{ action_title }} - BulSU CARES Console{% endblock %}
 {% block page_title %}{{ action_title }}{% endblock %}
-{% block page_subtitle %}Configure facility specifications, location, and baseline operating hours{% endblock %}
+{% block page_subtitle %}Configure facility specifications, capacity, location, and baseline operating hours.{% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'admin_facility_list' %}" class="btn btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i> Back to Facilities
+<a href="{% url 'admin_facility_list' %}" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-300 transition-colors shadow-sm">
+    <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+    <span>Back to Facilities</span>
 </a>
 {% endblock %}
 
 {% block admin_content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h5 class="card-title mb-0 fw-bold text-dark">
-                    <i class="bi bi-building-gear me-2 text-primary"></i>Facility Details
-                </h5>
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6 sm:p-8">
+        <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-[#6b1414]/10 text-bulsu-maroon flex items-center justify-center">
+                <span class="material-symbols-outlined text-[20px]">apartment</span>
             </div>
-            <div class="card-body p-4">
-                {% if form.errors %}
-                    <div class="alert alert-danger py-2 small">
-                        <ul class="mb-0 ps-3">
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-                                {% endfor %}
-                            {% endfor %}
-                            {% for error in form.non_field_errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-
-                <form method="post">
-                    {% csrf_token %}
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold text-muted">Facility Code <span class="text-danger">*</span></label>
-                            {{ form.code }}
-                            <div class="form-text">Unique code, e.g. AUD-101</div>
-                        </div>
-
-                        <div class="col-md-8">
-                            <label class="form-label small fw-semibold text-muted">Facility Name <span class="text-danger">*</span></label>
-                            {{ form.name }}
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted">Category <span class="text-danger">*</span></label>
-                            {{ form.category }}
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted">Participant Capacity <span class="text-danger">*</span></label>
-                            {{ form.capacity }}
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-muted">Location / Building Details <span class="text-danger">*</span></label>
-                            {{ form.location }}
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted">Default Opening Time <span class="text-danger">*</span></label>
-                            {{ form.default_open_time }}
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted">Default Closing Time <span class="text-danger">*</span></label>
-                            {{ form.default_close_time }}
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-muted">Description / Guidelines</label>
-                            {{ form.description }}
-                        </div>
-
-                        <div class="col-12">
-                            <div class="form-check form-switch mt-2">
-                                {{ form.is_active }}
-                                <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">
-                                    Active Facility (Available for reservation requests)
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
-                        <a href="{% url 'admin_facility_list' %}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-navy px-4">
-                            <i class="bi bi-save me-1"></i> Save Facility
-                        </button>
-                    </div>
-                </form>
+            <div>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 font-display">Facility Specifications &amp; Parameters</h3>
+                <p class="text-xs text-slate-500">Provide accurate details for scheduling and capacity enforcement</p>
             </div>
         </div>
+
+        {% if form.errors %}
+            <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs mb-6 shadow-sm" role="alert">
+                <div class="font-bold flex items-center gap-1 mb-1.5 text-sm">
+                    <span class="material-symbols-outlined text-[16px]">error</span>
+                    Please correct the following errors:
+                </div>
+                <ul class="list-disc list-inside space-y-1">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                <div class="sm:col-span-4 space-y-1">
+                    <label class="block text-xs font-semibold text-slate-700">Facility Code <span class="text-rose-500">*</span></label>
+                    {{ form.code }}
+                    <span class="text-[11px] text-slate-400">e.g. AUD-101, GYM-MAIN</span>
+                </div>
+
+                <div class="sm:col-span-8 space-y-1">
+                    <label class="block text-xs font-semibold text-slate-700">Facility Name <span class="text-rose-500">*</span></label>
+                    {{ form.name }}
+                </div>
+
+                <div class="sm:col-span-6 space-y-1">
+                    <label class="block text-xs font-semibold text-slate-700">Category <span class="text-rose-500">*</span></label>
+                    {{ form.category }}
+                </div>
+
+                <div class="sm:col-span-6 space-y-1">
+                    <label class="block text-xs font-semibold text-slate-700">Participant Capacity <span class="text-rose-500">*</span></label>
+                    {{ form.capacity }}
+                </div>
+
+                <div class="sm:col-span-12 space-y-1">
+                    <label class="block text-xs font-semibold text-slate-700">Location / Building Details <span class="text-rose-500">*</span></label>
+                    {{ form.location }}
+                </div>
+
+                <div class="sm:col-span-6 space-y-1">
+                    <label class="block text-xs font-semibold text-slate-700">Default Opening Time <span class="text-rose-500">*</span></label>
+                    {{ form.default_open_time }}
+                </div>
+
+                <div class="sm:col-span-6 space-y-1">
+                    <label class="block text-xs font-semibold text-slate-700">Default Closing Time <span class="text-rose-500">*</span></label>
+                    {{ form.default_close_time }}
+                </div>
+
+                <div class="sm:col-span-12 space-y-1">
+                    <label class="block text-xs font-semibold text-slate-700">Description / Guidelines</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="sm:col-span-12 pt-2">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        {{ form.is_active }}
+                        <span class="text-xs font-semibold text-slate-800">Active Facility (Enabled for reservation discovery and booking)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-slate-100 flex items-center justify-end gap-3 mt-6">
+                <a href="{% url 'admin_facility_list' %}" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 transition-colors shadow-sm">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">save</span>
+                    <span>Save Facility</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

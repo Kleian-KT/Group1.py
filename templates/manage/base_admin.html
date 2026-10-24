@@ -1,133 +1,182 @@
 {% extends 'base.html' %}
 
 {% block layout_content %}
-<div class="admin-wrapper">
-    <!-- Left Persistent Sidebar -->
-    <aside class="admin-sidebar no-print">
-        <div class="sidebar-brand">
-            <i class="bi bi-building-check text-primary fs-4"></i>
-            <div>
-                <span class="d-block lh-1 text-white">Campus Facilities</span>
-                <small class="text-secondary" style="font-size: 0.725rem; letter-spacing: 1px;">OPERATIONS CONSOLE</small>
+<div class="min-h-screen bg-surface text-on-surface font-sans antialiased selection:bg-amber-500 selection:text-black">
+    <!-- Fixed Left Sidebar strictly matching Stitch -->
+    <aside class="fixed left-0 top-0 h-full w-72 bg-[#4a0808] text-white z-50 flex flex-col justify-between shadow-2xl select-none border-r border-[#360505] no-print">
+        <!-- Brand / Navigation Links -->
+        <div class="flex flex-col flex-1 overflow-y-auto">
+            <!-- Brand Section -->
+            <div class="p-6 border-b border-white/10 flex gap-3.5 bg-[#3d0606]/60 items-center">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#6b1414] to-[#2e0505] p-2 shadow-md border border-amber-400/30 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-amber-300 text-2xl">account_balance</span>
+                </div>
+                <div class="leading-tight">
+                    <div class="text-[13px] font-medium text-amber-200/90 tracking-wide font-display">BulSU CARES</div>
+                    <div class="text-[14px] font-extrabold uppercase tracking-wider text-amber-400 font-display">ADMIN PORTAL</div>
+                </div>
             </div>
+
+            <!-- Navigation Links -->
+            <nav class="py-4 px-3 space-y-1 text-sm font-medium">
+                <!-- Dashboard -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'dashboard' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_dashboard' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'dashboard' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+
+                <!-- User Management -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'users' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_user_list' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'users' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">group</span>
+                    <span>User Management</span>
+                </a>
+
+                <!-- Facility Management -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'facilities' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_facility_list' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'facilities' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">apartment</span>
+                    <span>Facility Management</span>
+                </a>
+
+                <!-- Reservation Requests -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'reservations' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_reservation_list' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'reservations' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">event_available</span>
+                    <span>Reservation Requests</span>
+                </a>
+
+                <!-- Calendar & Schedule -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'calendar' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_calendar' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'calendar' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">calendar_month</span>
+                    <span>Calendar &amp; Schedule</span>
+                </a>
+
+                <!-- Event Monitoring -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'events' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_event_list' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'events' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">visibility</span>
+                    <span>Event Monitoring</span>
+                </a>
+
+                <!-- Closure Management -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'closures' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_closure_list' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'closures' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">do_not_disturb_on</span>
+                    <span>Closure Management</span>
+                </a>
+
+                <!-- Divider -->
+                <div class="pt-3 pb-1 px-3">
+                    <div class="border-t border-white/10"></div>
+                </div>
+
+                <!-- Reports & Analytics -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'reports' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_reports' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'reports' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">monitoring</span>
+                    <span>Reports &amp; Analytics</span>
+                </a>
+
+                <!-- Audit Logs -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'audit' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_audit_logs' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'audit' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">history</span>
+                    <span>Audit Logs</span>
+                </a>
+
+                <!-- System Settings -->
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {% if active_menu == 'settings' %}bg-[#6b1414] text-white font-semibold border-l-4 border-amber-400 shadow-sm{% else %}text-amber-100/75 hover:text-white hover:bg-white/10{% endif %}" 
+                   href="{% url 'admin_settings' %}">
+                    <span class="material-symbols-outlined text-[20px] {% if active_menu == 'settings' %}text-amber-400{% else %}text-amber-200/70 group-hover:text-amber-300{% endif %}">settings</span>
+                    <span>System Settings</span>
+                </a>
+            </nav>
         </div>
 
-        <nav class="sidebar-nav">
-            <a href="{% url 'admin_dashboard' %}" class="sidebar-item {% if active_menu == 'dashboard' %}active{% endif %}">
-                <i class="bi bi-grid-1x2-fill"></i>
-                <span>Dashboard</span>
-            </a>
-            
-            <a href="{% url 'admin_user_list' %}" class="sidebar-item {% if active_menu == 'users' %}active{% endif %}">
-                <i class="bi bi-people-fill"></i>
-                <span>User Management</span>
-            </a>
-
-            <div class="sidebar-divider"></div>
-
-            <a href="{% url 'admin_facility_list' %}" class="sidebar-item {% if active_menu == 'facilities' %}active{% endif %}">
-                <i class="bi bi-buildings-fill"></i>
-                <span>Facility Management</span>
-            </a>
-
-            <a href="{% url 'admin_reservation_list' %}" class="sidebar-item {% if active_menu == 'reservations' %}active{% endif %}">
-                <i class="bi bi-inbox-fill"></i>
-                <span>Reservation Requests</span>
-            </a>
-
-            <a href="{% url 'admin_calendar' %}" class="sidebar-item {% if active_menu == 'calendar' %}active{% endif %}">
-                <i class="bi bi-calendar3"></i>
-                <span>Calendar & Schedule</span>
-            </a>
-
-            <a href="{% url 'admin_event_list' %}" class="sidebar-item {% if active_menu == 'events' %}active{% endif %}">
-                <i class="bi bi-clipboard2-check-fill"></i>
-                <span>Event Monitoring</span>
-            </a>
-
-            <a href="{% url 'admin_closure_list' %}" class="sidebar-item {% if active_menu == 'closures' %}active{% endif %}">
-                <i class="bi bi-slash-circle-fill"></i>
-                <span>Closure Management</span>
-            </a>
-
-            <div class="sidebar-divider"></div>
-
-            <a href="{% url 'admin_reports' %}" class="sidebar-item {% if active_menu == 'reports' %}active{% endif %}">
-                <i class="bi bi-bar-chart-fill"></i>
-                <span>Reports & Analytics</span>
-            </a>
-
-            <a href="{% url 'admin_audit_logs' %}" class="sidebar-item {% if active_menu == 'audit' %}active{% endif %}">
-                <i class="bi bi-journal-text"></i>
-                <span>Audit Logs</span>
-            </a>
-
-            <a href="{% url 'admin_settings' %}" class="sidebar-item {% if active_menu == 'settings' %}active{% endif %}">
-                <i class="bi bi-gear-fill"></i>
-                <span>System Settings</span>
-            </a>
-        </nav>
-
-        <div class="p-3 border-top border-secondary border-opacity-25 text-center">
-            <small class="text-secondary">Campus Ops v1.0 &copy; 2026</small>
+        <!-- Bottom Area: Sign Out Trigger with Confirmation Modal -->
+        <div class="p-4 border-t border-white/10 bg-[#380505]/80 mt-auto">
+            <form action="{% url 'logout' %}" method="post" class="m-0">
+                {% csrf_token %}
+                <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-amber-200/80 hover:text-white hover:bg-white/10 transition-colors group text-sm font-medium" 
+                        type="submit"
+                        data-confirm="Are you sure you want to sign out of the BulSU Administrative Console?"
+                        data-confirm-title="Confirm Sign Out"
+                        data-confirm-btn="Sign Out"
+                        data-confirm-variant="danger">
+                    <span class="material-symbols-outlined text-[20px] text-amber-200/80 group-hover:text-white transition-transform group-hover:translate-x-0.5">logout</span>
+                    <span>Sign Out</span>
+                </button>
+            </form>
         </div>
     </aside>
 
-    <!-- Main Workspace -->
-    <div class="admin-main">
-        <!-- Compact Top Navigation -->
-        <header class="admin-topbar no-print">
-            <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-primary px-3 py-2 text-uppercase fw-semibold" style="letter-spacing: 0.5px;">
-                    <i class="bi bi-shield-lock-fill me-1"></i> Admin Console
-                </span>
-                <span class="text-muted d-none d-md-inline" id="live-clock"></span>
+    <!-- Main Workspace offset by 72 (w-72 = 18rem = 288px) -->
+    <div class="lg:pl-72 min-h-screen flex flex-col justify-between bg-surface">
+        <!-- Fixed Topbar Header strictly matching Stitch -->
+        <header class="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface/90 backdrop-blur-xl border-b border-slate-200/70 shadow-[0_1px_8px_rgba(0,0,0,0.03)] z-40 flex items-center justify-between px-6 no-print">
+            <!-- Left: Search input -->
+            <div class="flex-1 max-w-xl mr-6">
+                <div class="relative flex items-center w-full">
+                    <span class="material-symbols-outlined absolute left-3 text-slate-400 text-[18px]">search</span>
+                    <input class="h-9 pl-9 pr-4 rounded-lg bg-[#edf2f9] text-xs text-on-surface placeholder:text-slate-400 w-full outline-none focus:ring-1 focus:ring-primary border-0 transition-all" 
+                           placeholder="Quick search facilities, reservations, halls... (Ctrl+K)" 
+                           type="text">
+                </div>
             </div>
 
-            <div class="d-flex align-items-center gap-3">
-                <div class="text-end d-none d-sm-block">
-                    <div class="fw-semibold text-dark">{{ request.user.display_name }}</div>
-                    <small class="text-muted">{{ request.user.email|default:"Administrator" }}</small>
+            <!-- Right: Live Manila clock & user profile pill -->
+            <div class="flex items-center gap-6">
+                <div class="hidden sm:flex items-center text-xs text-slate-600 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-teal-500 inline-block mr-2 animate-pulse"></span>
+                    <span id="live-clock">Manila (PHT)</span>
                 </div>
-                <div class="vr mx-1"></div>
-                <form action="{% url 'logout' %}" method="post" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-danger btn-sm px-3">
-                        <i class="bi bi-box-arrow-right me-1"></i> Sign Out
-                    </button>
-                </form>
+                <div class="flex items-center gap-3">
+                    <div class="hidden md:flex flex-col text-right">
+                        <span class="text-xs font-bold text-slate-800 leading-tight">{{ request.user.display_name|default:request.user.username }}</span>
+                        <span class="text-[11px] text-slate-500 font-medium">Role: {{ request.user.get_role_display|default:"Facilities Admin" }}</span>
+                    </div>
+                    <div class="w-9 h-9 rounded-lg bg-[#4a0808] flex items-center justify-center text-white shrink-0 shadow-sm border border-amber-400/20">
+                        <span class="material-symbols-outlined text-[18px]">person</span>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <!-- Main Body -->
-        <main class="admin-content">
-            <!-- Messages -->
-            {% if messages %}
-                <div class="row mb-3">
-                    <div class="col-12">
+        <!-- Main Body Canvas -->
+        <main class="w-full pt-16 bg-surface flex-grow">
+            <div class="p-6 sm:p-8 space-y-6 max-w-[1600px] mx-auto w-full">
+                <!-- Messages -->
+                {% if messages %}
+                    <div class="space-y-3">
                         {% for message in messages %}
-                            <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show shadow-sm" role="alert">
-                                <i class="bi bi-info-circle-fill me-2"></i>
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            <div class="p-4 rounded-xl border flex items-center justify-between {% if message.tags == 'error' %}bg-rose-50 border-rose-200 text-rose-900{% elif message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-900{% else %}bg-blue-50 border-blue-200 text-blue-900{% endif %} shadow-sm" role="alert">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-[20px]">
+                                        {% if message.tags == 'error' %}error{% elif message.tags == 'success' %}check_circle{% else %}info{% endif %}
+                                    </span>
+                                    <div class="text-sm font-medium">{{ message }}</div>
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
-                </div>
-            {% endif %}
+                {% endif %}
 
-            <!-- Header with Title & Contextual Actions -->
-            <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 pb-2 border-bottom">
-                <div>
-                    <h2 class="h3 fw-bold text-dark mb-1">{% block page_title %}Dashboard{% endblock %}</h2>
-                    <p class="text-muted mb-0">{% block page_subtitle %}Campus facilities and operations overview{% endblock %}</p>
+                <!-- Header with Title & Contextual Actions -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-on-surface font-display">{% block page_title %}Dashboard{% endblock %}</h1>
+                        <p class="text-xs sm:text-sm text-slate-500 font-medium">{% block page_subtitle %}Live metrics, reservation queue, and facility utilization across academic venues.{% endblock %}</p>
+                    </div>
+                    <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+                        {% block page_actions %}{% endblock %}
+                    </div>
                 </div>
-                <div class="mt-2 mt-md-0 d-flex gap-2">
-                    {% block page_actions %}{% endblock %}
-                </div>
+
+                {% block admin_content %}{% endblock %}
             </div>
-
-            {% block admin_content %}{% endblock %}
         </main>
     </div>
 </div>
@@ -139,9 +188,10 @@
         const clockEl = document.getElementById('live-clock');
         if (clockEl) {
             const now = new Date();
-            clockEl.textContent = now.toLocaleDateString('en-US', {
-                weekday: 'short', month: 'short', day: 'numeric',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            clockEl.textContent = 'Manila (PHT): ' + now.toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric'
+            }) + ' • ' + now.toLocaleTimeString('en-US', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
             });
         }
     }

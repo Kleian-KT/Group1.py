@@ -1,197 +1,282 @@
 {% extends 'manage/base_admin.html' %}
 
-{% block title %}Admin Dashboard - Campus Operations{% endblock %}
-{% block page_title %}Operational Dashboard{% endblock %}
-{% block page_subtitle %}Live metrics, reservation queue, and facility utilization{% endblock %}
+{% block title %}Admin Dashboard - BulSU CARES Console{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Live metrics, reservation queue, and facility utilization across academic venues.{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_reports' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-300 transition-colors shadow-sm">
+    <span class="material-symbols-outlined text-[18px] text-slate-500">download</span>
+    <span>Export Report (CSV/PDF)</span>
+</a>
+{% endblock %}
 
 {% block admin_content %}
-<!-- 4 Real Database KPI Cards -->
-<div class="row g-4 mb-4">
-    <!-- Pending Requests -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="card kpi-card shadow-sm border-start border-warning border-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="kpi-label text-warning mb-1">Pending Requests</div>
-                    <div class="kpi-value text-dark">{{ pending_count }}</div>
-                    <small class="text-muted">Awaiting administrative review</small>
-                </div>
-                <div class="kpi-icon text-warning">
-                    <i class="bi bi-hourglass-split"></i>
-                </div>
-            </div>
-            <div class="mt-3 pt-2 border-top">
-                <a href="{% url 'admin_reservation_list' %}?status=PENDING" class="small fw-semibold text-warning d-flex align-items-center justify-content-between">
-                    <span>Review Queue</span>
-                    <i class="bi bi-arrow-right"></i>
+<!-- Campus Alert / Status Banner strictly matching Stitch -->
+<div class="flex items-center justify-between px-5 py-3.5 bg-[#F0FDF4] border border-emerald-200/70 rounded-xl shadow-sm" id="system-alert-banner">
+    <div class="flex items-center gap-3 min-w-0">
+        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100/80 text-emerald-800 shrink-0">
+            <span class="material-symbols-outlined text-[18px]">verified</span>
+        </div>
+        <p class="text-xs sm:text-sm text-emerald-900 truncate">
+            <span class="font-bold">Campus Operations Normal:</span> All facilities active across Main, Bustos, Meneses, and Sarmiento campuses.
+            {% if pending_count > 0 %}
+                <a href="{% url 'admin_reservation_list' %}?status=PENDING" class="font-semibold text-emerald-800 underline decoration-emerald-400 underline-offset-2 ml-1">
+                    {{ pending_count }} pending request{{ pending_count|pluralize }} require endorsement
                 </a>
+            {% endif %}
+        </p>
+    </div>
+    <button aria-label="Dismiss banner" class="shrink-0 p-1.5 text-emerald-800/80 hover:text-emerald-950 hover:bg-emerald-100/60 rounded-lg transition-colors ml-4" onclick="document.getElementById('system-alert-banner').style.display='none'" type="button">
+        <span class="material-symbols-outlined text-[16px]">close</span>
+    </button>
+</div>
+
+<!-- 4 KPI Cards strictly matching Stitch Architecture -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+    <!-- Card 1: Pending Requests -->
+    <div class="bg-white rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden group border border-slate-200/80 hover:shadow-md transition-shadow">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs uppercase tracking-wider text-slate-500 font-bold">Pending Requests</span>
+                <span class="material-symbols-outlined text-amber-500 text-2xl">hourglass_top</span>
             </div>
+            <div class="text-3xl font-extrabold text-slate-900 leading-none mb-2 font-display">{{ pending_count }}</div>
+            <p class="text-xs text-slate-500 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                <span>Awaiting administrator endorsement</span>
+            </p>
+        </div>
+        <div class="mt-5 pt-3 bg-slate-50/80 -mx-6 -mb-6 px-6 py-2.5 flex items-center justify-between border-t border-slate-100">
+            <a class="text-xs font-semibold text-slate-800 hover:text-bulsu-maroon flex items-center gap-1 transition-colors" href="{% url 'admin_reservation_list' %}?status=PENDING">
+                <span>Review Queue</span>
+                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </a>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-amber-100/80 text-amber-900 font-semibold">Action Needed</span>
         </div>
     </div>
 
-    <!-- Approved Upcoming Bookings -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="card kpi-card shadow-sm border-start border-primary border-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="kpi-label text-primary mb-1">Approved Upcoming</div>
-                    <div class="kpi-value text-dark">{{ approved_upcoming_count }}</div>
-                    <small class="text-muted">Future confirmed bookings</small>
-                </div>
-                <div class="kpi-icon text-primary">
-                    <i class="bi bi-calendar-check-fill"></i>
-                </div>
+    <!-- Card 2: Approved Upcoming -->
+    <div class="bg-white rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden group border border-slate-200/80 hover:shadow-md transition-shadow">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-blue-600"></div>
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs uppercase tracking-wider text-slate-500 font-bold">Approved Upcoming</span>
+                <span class="material-symbols-outlined text-blue-600 text-2xl">event_available</span>
             </div>
-            <div class="mt-3 pt-2 border-top">
-                <a href="{% url 'admin_calendar' %}" class="small fw-semibold text-primary d-flex align-items-center justify-content-between">
-                    <span>View Calendar</span>
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
+            <div class="text-3xl font-extrabold text-slate-900 leading-none mb-2 font-display">{{ approved_upcoming_count }}</div>
+            <p class="text-xs text-slate-500 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                <span>Confirmed scheduled campus activities</span>
+            </p>
+        </div>
+        <div class="mt-5 pt-3 bg-slate-50/80 -mx-6 -mb-6 px-6 py-2.5 flex items-center justify-between border-t border-slate-100">
+            <a class="text-xs font-semibold text-slate-800 hover:text-bulsu-maroon flex items-center gap-1 transition-colors" href="{% url 'admin_calendar' %}">
+                <span>View Calendar</span>
+                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </a>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-900 font-semibold">Live Events</span>
         </div>
     </div>
 
-    <!-- Completed Events -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="card kpi-card shadow-sm border-start border-success border-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="kpi-label text-success mb-1">Completed Events</div>
-                    <div class="kpi-value text-dark">{{ completed_count }}</div>
-                    <small class="text-muted">Concluded events on record</small>
-                </div>
-                <div class="kpi-icon text-success">
-                    <i class="bi bi-check-circle-fill"></i>
-                </div>
+    <!-- Card 3: Completed Events -->
+    <div class="bg-white rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden group border border-slate-200/80 hover:shadow-md transition-shadow">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-600"></div>
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs uppercase tracking-wider text-slate-500 font-bold">Completed Events</span>
+                <span class="material-symbols-outlined text-emerald-600 text-2xl">check_circle</span>
             </div>
-            <div class="mt-3 pt-2 border-top">
-                <a href="{% url 'admin_event_list' %}?status=COMPLETED" class="small fw-semibold text-success d-flex align-items-center justify-content-between">
-                    <span>Event Records</span>
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
+            <div class="text-3xl font-extrabold text-slate-900 leading-none mb-2 font-display">{{ completed_count }}</div>
+            <p class="text-xs text-slate-500 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                <span>Concluded &amp; archived university bookings</span>
+            </p>
+        </div>
+        <div class="mt-5 pt-3 bg-slate-50/80 -mx-6 -mb-6 px-6 py-2.5 flex items-center justify-between border-t border-slate-100">
+            <a class="text-xs font-semibold text-slate-800 hover:text-bulsu-maroon flex items-center gap-1 transition-colors" href="{% url 'admin_event_list' %}?status=COMPLETED">
+                <span>Event Records</span>
+                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </a>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100/80 text-emerald-900 font-semibold">100% Cleared</span>
         </div>
     </div>
 
-    <!-- Active Facilities -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="card kpi-card shadow-sm border-start border-info border-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="kpi-label text-info mb-1">Active Facilities</div>
-                    <div class="kpi-value text-dark">{{ active_facilities_count }}</div>
-                    <small class="text-muted">Operational campus spaces</small>
-                </div>
-                <div class="kpi-icon text-info">
-                    <i class="bi bi-buildings-fill"></i>
-                </div>
+    <!-- Card 4: Active Facilities -->
+    <div class="bg-white rounded-xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden group border border-slate-200/80 hover:shadow-md transition-shadow">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-teal-600"></div>
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs uppercase tracking-wider text-slate-500 font-bold">Active Facilities</span>
+                <span class="material-symbols-outlined text-teal-600 text-2xl">apartment</span>
             </div>
-            <div class="mt-3 pt-2 border-top">
-                <a href="{% url 'admin_facility_list' %}" class="small fw-semibold text-info d-flex align-items-center justify-content-between">
-                    <span>Manage Spaces</span>
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
+            <div class="text-3xl font-extrabold text-slate-900 leading-none mb-2 font-display">{{ active_facilities_count }}</div>
+            <p class="text-xs text-slate-500 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0"></span>
+                <span>Operational academic spaces catalog</span>
+            </p>
+        </div>
+        <div class="mt-5 pt-3 bg-slate-50/80 -mx-6 -mb-6 px-6 py-2.5 flex items-center justify-between border-t border-slate-100">
+            <a class="text-xs font-semibold text-slate-800 hover:text-bulsu-maroon flex items-center gap-1 transition-colors" href="{% url 'admin_facility_list' %}">
+                <span>Manage Spaces</span>
+                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </a>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-teal-100/80 text-teal-900 font-semibold">Catalog Live</span>
         </div>
     </div>
 </div>
 
 <!-- Charts Section -->
-<div class="row g-4 mb-4">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
     <!-- Chart 1: Monthly Reservation Volume -->
-    <div class="col-lg-7">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0 fw-bold text-dark">
-                    <i class="bi bi-graph-up me-2 text-primary"></i>Monthly Reservation Volume
-                </h5>
-                <span class="badge bg-light text-muted border">Live Database Metrics</span>
+    <div class="bg-white rounded-xl p-6 sm:p-7 shadow-sm flex flex-col justify-between border border-slate-200/80">
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 gap-3 border-b border-slate-100">
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900 font-display">Monthly Reservation Volume</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Academic Year booking demand trends</p>
+                </div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-100">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Live Database Metrics</span>
+                </div>
             </div>
-            <div class="card-body p-4">
+            <div class="relative w-full pt-2">
                 <div style="height: 280px; position: relative;">
                     <canvas id="monthlyChart"></canvas>
                 </div>
             </div>
         </div>
+        <div class="mt-4 pt-3 flex items-center justify-between text-xs text-slate-500 bg-slate-50 px-4 py-2.5 rounded-lg border border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-bulsu-maroon">Key Trend:</span>
+                <span>Demand peaks around mid-semester university events</span>
+            </div>
+            <span class="font-mono font-medium text-slate-700">Real-time</span>
+        </div>
     </div>
 
-    <!-- Chart 2: Facility Usage Comparison -->
-    <div class="col-lg-5">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0 fw-bold text-dark">
-                    <i class="bi bi-pie-chart-fill me-2 text-info"></i>Facility Usage Breakdown
-                </h5>
-                <span class="badge bg-light text-muted border">Top Facilities</span>
+    <!-- Chart 2: Facility Usage Breakdown -->
+    <div class="bg-white rounded-xl p-6 sm:p-7 shadow-sm flex flex-col justify-between border border-slate-200/80">
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 gap-3 border-b border-slate-100">
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900 font-display">Facility Usage Breakdown</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Total bookings recorded per venue</p>
+                </div>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
+                    <span class="material-symbols-outlined text-[14px]">pie_chart</span>
+                    <span>Top Venues</span>
+                </div>
             </div>
-            <div class="card-body p-4">
+            <div class="relative w-full pt-2">
                 <div style="height: 280px; position: relative;">
                     <canvas id="facilityChart"></canvas>
                 </div>
             </div>
         </div>
+        <div class="mt-4 pt-3 flex items-center justify-between text-xs text-slate-500 bg-slate-50 px-4 py-2.5 rounded-lg border border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-700">Utilization:</span>
+                <span>Active auditorium and gymnasium venue distribution</span>
+            </div>
+            <span class="font-mono font-medium text-slate-700">Aggregated</span>
+        </div>
     </div>
 </div>
 
-<!-- Recent Pending Requests Queue -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 fw-bold text-dark">
-            <i class="bi bi-clock me-2 text-warning"></i>Recent Pending Requests
-        </h5>
-        <a href="{% url 'admin_reservation_list' %}?status=PENDING" class="btn btn-outline-primary btn-sm">
-            View All Pending ({{ pending_count }})
+<!-- Recent Pending Requests Queue strictly matching Stitch Data Matrix -->
+<div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200/80">
+    <div class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/60 border-b border-slate-100">
+        <div class="flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-[#6b1414] text-white flex items-center justify-center shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">pending_actions</span>
+            </div>
+            <div>
+                <h2 class="text-base sm:text-lg font-bold text-slate-900 font-display">Recent Pending Requests</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Bookings awaiting administrative decision and PFLMO endorsement</p>
+            </div>
+        </div>
+        <a class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-slate-100 text-bulsu-maroon text-xs font-semibold transition-colors border border-slate-200 shadow-sm" href="{% url 'admin_reservation_list' %}?status=PENDING">
+            <span>View All Pending ({{ pending_count }})</span>
+            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
         </a>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Reference</th>
-                        <th>Applicant</th>
-                        <th>Facility</th>
-                        <th>Event Title</th>
-                        <th>Requested Schedule</th>
-                        <th>Submission Date</th>
-                        <th class="text-end">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for res in recent_pending %}
-                        <tr>
-                            <td><span class="fw-bold font-monospace text-primary">{{ res.reference }}</span></td>
-                            <td>
-                                <div class="fw-semibold text-dark">{{ res.user.display_name }}</div>
-                                <small class="text-muted">@{{ res.user.username }}</small>
-                            </td>
-                            <td>{{ res.facility.name }}</td>
-                            <td>
-                                <div class="fw-semibold text-dark">{{ res.title }}</div>
-                                <small class="text-muted">{{ res.participant_count }} participants</small>
-                            </td>
-                            <td>
-                                <div>{{ res.start_time|date:"M d, Y" }}</div>
-                                <small class="text-muted">{{ res.start_time|time:"H:i" }} - {{ res.end_time|time:"H:i" }}</small>
-                            </td>
-                            <td><small class="text-muted">{{ res.created_at|date:"M d, Y H:i" }}</small></td>
-                            <td class="text-end">
-                                <a href="{% url 'admin_reservation_detail' reservation_id=res.id %}" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-check2-circle me-1"></i> Review
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-slate-600 text-xs uppercase font-bold tracking-wider border-b border-slate-200">
+                    <th class="py-3.5 px-6 text-left">Reference</th>
+                    <th class="py-3.5 px-6 text-left">Applicant</th>
+                    <th class="py-3.5 px-6 text-left">Facility</th>
+                    <th class="py-3.5 px-6 text-left">Event Title</th>
+                    <th class="py-3.5 px-6 text-left">Requested Schedule</th>
+                    <th class="py-3.5 px-6 text-left">Submitted</th>
+                    <th class="py-3.5 px-6 text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-800">
+                {% for res in recent_pending %}
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <span class="font-mono text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-800 font-bold border border-slate-200">
+                                {{ res.reference }}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-slate-900 text-sm">{{ res.user.display_name }}</span>
+                                <span class="text-xs text-slate-500">@{{ res.user.username }}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] text-bulsu-maroon">location_on</span>
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-xs text-slate-900">{{ res.facility.name }}</span>
+                                    <span class="text-[11px] text-slate-500">{{ res.facility.location }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left">
+                            <div class="flex flex-col max-w-xs gap-0.5">
+                                <span class="font-semibold text-slate-900 text-xs">{{ res.title }}</span>
+                                <span class="text-slate-500 text-[11px] font-mono">{{ res.participant_count }} attendees</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="font-mono font-medium text-xs text-slate-900">{{ res.start_time|date:"M d, Y" }}</span>
+                                <span class="font-mono text-[11px] text-slate-500">{{ res.start_time|time:"H:i" }} – {{ res.end_time|time:"H:i" }}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <span class="font-mono text-xs text-slate-500">{{ res.created_at|date:"M d, H:i" }}</span>
+                        </td>
+                        <td class="py-4 px-6 text-center whitespace-nowrap">
+                            <div class="inline-flex items-center justify-center">
+                                <a href="{% url 'admin_reservation_detail' reservation_id=res.id %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors">
+                                    <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                    <span>Review</span>
                                 </a>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                <i class="bi bi-check2-all fs-2 text-success d-block mb-1"></i>
-                                No pending requests awaiting review.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-10 text-slate-400">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <span class="material-symbols-outlined text-4xl text-emerald-500">check_circle</span>
+                                <p class="font-bold text-slate-700 text-sm">Queue Cleared</p>
+                                <p class="text-xs text-slate-400">No pending reservation requests awaiting review.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
@@ -199,75 +284,97 @@
 {% block extra_js %}
 {{ block.super }}
 <script>
-    // Live Chart Rendering
     document.addEventListener('DOMContentLoaded', function() {
         const monthlyLabels = JSON.parse('{{ monthly_labels_json|escapejs }}');
         const monthlyCounts = JSON.parse('{{ monthly_counts_json|escapejs }}');
         const facilityLabels = JSON.parse('{{ facility_labels_json|escapejs }}');
         const facilityCounts = JSON.parse('{{ facility_counts_json|escapejs }}');
 
-        // Monthly Line Chart
-        const ctxMonthly = document.getElementById('monthlyChart').getContext('2d');
-        new Chart(ctxMonthly, {
-            type: 'line',
-            data: {
-                labels: monthlyLabels,
-                datasets: [{
-                    label: 'Reservations',
-                    data: monthlyCounts,
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    borderWidth: 2.5,
-                    fill: true,
-                    tension: 0.35,
-                    pointBackgroundColor: '#2563eb',
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
-                    }
-                }
-            }
-        });
+        // Monthly Line Chart with Maroon Gradient Fill
+        const canvasMonthly = document.getElementById('monthlyChart');
+        if (canvasMonthly) {
+            const ctxMonthly = canvasMonthly.getContext('2d');
+            const maroonGradient = ctxMonthly.createLinearGradient(0, 0, 0, 260);
+            maroonGradient.addColorStop(0, 'rgba(107, 20, 20, 0.35)');
+            maroonGradient.addColorStop(1, 'rgba(107, 20, 20, 0.0)');
 
-        // Facility Bar Chart
-        const ctxFacility = document.getElementById('facilityChart').getContext('2d');
-        new Chart(ctxFacility, {
-            type: 'bar',
-            data: {
-                labels: facilityLabels,
-                datasets: [{
-                    label: 'Bookings',
-                    data: facilityCounts,
-                    backgroundColor: [
-                        '#0f2942', '#2563eb', '#0d9488', '#f59e0b', '#8b5cf6', '#64748b'
-                    ],
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
+            new Chart(ctxMonthly, {
+                type: 'line',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: [{
+                        label: 'Reservations',
+                        data: monthlyCounts,
+                        borderColor: '#6b1414',
+                        backgroundColor: maroonGradient,
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#6b1414',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, color: '#64748b' },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        x: {
+                            ticks: { color: '#64748b' },
+                            grid: { display: false }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        // Facility Bar Chart with Theme Accents
+        const canvasFacility = document.getElementById('facilityChart');
+        if (canvasFacility) {
+            const ctxFacility = canvasFacility.getContext('2d');
+            new Chart(ctxFacility, {
+                type: 'bar',
+                data: {
+                    labels: facilityLabels,
+                    datasets: [{
+                        label: 'Bookings',
+                        data: facilityCounts,
+                        backgroundColor: [
+                            '#6b1414', '#d97706', '#2563eb', '#0d9488', '#16a34a', '#475569'
+                        ],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, color: '#64748b' },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        x: {
+                            ticks: { color: '#64748b' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
     });
 </script>
 {% endblock %}
