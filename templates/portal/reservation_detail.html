@@ -1,134 +1,191 @@
 {% extends 'portal/base_portal.html' %}
 
-{% block title %}Reservation {{ reservation.reference }} - Campus Portal{% endblock %}
+{% block title %}Reservation {{ reservation.reference }} - BulSU CARES Portal{% endblock %}
 {% block portal_title %}Reservation: {{ reservation.reference }}{% endblock %}
 {% block portal_subtitle %}Event booking status, scheduled timeline, and venue details{% endblock %}
 
 {% block portal_actions %}
-<a href="{% url 'user_reservation_list' %}" class="btn btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i> Back to My Reservations
+<a href="{% url 'user_reservation_list' %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-colors">
+    <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+    <span>Back to My Reservations</span>
 </a>
 {% endblock %}
 
 {% block portal_content %}
-<div class="row g-4 justify-content-center">
-    <div class="col-lg-8">
-        <!-- Main Card -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="fs-5 fw-bold font-monospace text-primary">{{ reservation.reference }}</span>
-                    <span class="badge bg-light text-muted border">Tracking ID</span>
-                </div>
-                <span class="status-badge status-{{ reservation.status|lower }} fs-6">
-                    {{ reservation.get_status_display }}
+<div class="max-w-4xl mx-auto space-y-6 mb-8">
+    <!-- Main Reservation Details Card -->
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
+        <!-- Card Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+            <div class="flex items-center gap-2">
+                <span class="font-mono text-sm font-bold text-slate-900 px-3 py-1 rounded-md bg-white border border-slate-200 shadow-2xs">
+                    {{ reservation.reference }}
                 </span>
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Application Summary</span>
             </div>
 
-            <div class="card-body p-4">
-                <h4 class="fw-bold text-dark mb-2">{{ reservation.title }}</h4>
-
-                <div class="p-3 bg-light rounded-3 mb-4 border">
-                    <span class="small fw-semibold text-muted text-uppercase d-block mb-1">Event Purpose</span>
-                    <p class="mb-0 text-dark">{{ reservation.purpose }}</p>
-                </div>
-
-                <div class="row g-3 mb-4">
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded-3">
-                            <small class="text-muted d-block mb-1"><i class="bi bi-geo-alt me-1 text-primary"></i>Venue Space</small>
-                            <span class="fw-bold text-dark">{{ reservation.facility.name }}</span>
-                            <small class="text-muted d-block">{{ reservation.facility.code }} &bull; {{ reservation.facility.location }}</small>
-                        </div>
-                    </div>
-
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded-3">
-                            <small class="text-muted d-block mb-1"><i class="bi bi-people me-1 text-primary"></i>Attendees</small>
-                            <span class="fw-bold text-dark">{{ reservation.participant_count }} Participants</span>
-                            <small class="text-muted d-block">Facility Capacity: {{ reservation.facility.capacity }}</small>
-                        </div>
-                    </div>
-
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded-3">
-                            <small class="text-muted d-block mb-1"><i class="bi bi-calendar-event me-1 text-primary"></i>Scheduled Date</small>
-                            <span class="fw-bold text-dark">{{ reservation.start_time|date:"F d, Y" }}</span>
-                            <small class="text-muted d-block">{{ reservation.start_time|date:"l" }}</small>
-                        </div>
-                    </div>
-
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded-3">
-                            <small class="text-muted d-block mb-1"><i class="bi bi-clock me-1 text-primary"></i>Reserved Time Window</small>
-                            <span class="fw-bold text-dark">{{ reservation.start_time|time:"H:i" }} &ndash; {{ reservation.end_time|time:"H:i" }}</span>
-                            <small class="text-muted d-block">Duration: {{ reservation.duration_hours }} Hours</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Administrative Decision Note (Rejection / Cancellation Reason) -->
-                {% if reservation.decision_reason %}
-                    <div class="p-3 mb-4 rounded-3 border {% if reservation.status == 'REJECTED' %}bg-danger-subtle border-danger-subtle text-danger{% else %}bg-light text-muted{% endif %}">
-                        <h6 class="fw-bold mb-1">
-                            <i class="bi bi-info-circle-fill me-1"></i>Administrative Notice:
-                        </h6>
-                        <p class="mb-0 small text-dark">{{ reservation.decision_reason }}</p>
-                    </div>
+            <div>
+                {% if reservation.status == 'PENDING' %}
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        {{ reservation.get_status_display }}
+                    </span>
+                {% elif reservation.status == 'APPROVED' %}
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                        {{ reservation.get_status_display }}
+                    </span>
+                {% elif reservation.status == 'CHECKED_IN' %}
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                        {{ reservation.get_status_display }}
+                    </span>
+                {% elif reservation.status == 'COMPLETED' %}
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                        {{ reservation.get_status_display }}
+                    </span>
+                {% elif reservation.status == 'REJECTED' or reservation.status == 'CANCELLED' or reservation.status == 'NO_SHOW' %}
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                        {{ reservation.get_status_display }}
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        {{ reservation.get_status_display }}
+                    </span>
                 {% endif %}
-
-                <!-- Submission Date & Cancellation Button -->
-                <div class="pt-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <small class="text-muted">
-                        Submitted on {{ reservation.created_at|date:"M d, Y H:i" }}
-                    </small>
-
-                    {% if can_cancel %}
-                        <form method="post" action="{% url 'user_reservation_cancel' reservation_id=reservation.id %}" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this reservation? This action cannot be reversed.');">
-                                <i class="bi bi-x-circle me-1"></i> Cancel Reservation
-                            </button>
-                        </form>
-                    {% else %}
-                        {% if reservation.status in 'COMPLETED,CANCELLED,REJECTED,NO_SHOW' %}
-                            <span class="badge bg-light text-muted border">Concluded Reservation</span>
-                        {% endif %}
-                    {% endif %}
-                </div>
             </div>
         </div>
 
-        <!-- Schedule Change History (if rescheduled by admin) -->
-        {% if change_history %}
-            <div class="card shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h6 class="card-title mb-0 fw-bold text-dark">
-                        <i class="bi bi-clock-history me-2 text-warning"></i>Administrative Reschedule Notices
-                    </h6>
+        <div class="p-6 md:p-8 space-y-6">
+            <!-- Event Title -->
+            <div>
+                <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Event Title</span>
+                <h2 class="text-xl md:text-2xl font-bold text-slate-900 font-display">
+                    {{ reservation.title }}
+                </h2>
+            </div>
+
+            <!-- Event Purpose Callout -->
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Event Purpose & Outline</span>
+                <p class="text-xs md:text-sm text-slate-700 leading-relaxed">{{ reservation.purpose }}</p>
+            </div>
+
+            <!-- 4 Spec Metric Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Venue Space -->
+                <div class="p-4 rounded-xl border border-slate-200/80 bg-white shadow-2xs space-y-1">
+                    <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                        <span class="material-symbols-outlined text-[16px] text-[#4a0808]">location_on</span>
+                        <span>Venue Space</span>
+                    </div>
+                    <div class="text-sm font-bold text-slate-900">{{ reservation.facility.name }}</div>
+                    <div class="text-xs text-slate-500 font-mono">{{ reservation.facility.code }} &bull; {{ reservation.facility.location }}</div>
                 </div>
-                <div class="card-body p-0">
-                    <ul class="list-group list-group-flush small">
-                        {% for c in change_history %}
-                            <li class="list-group-item p-3">
-                                <div class="text-muted mb-1">Rescheduled on {{ c.changed_at|date:"M d, Y H:i" }}</div>
-                                <div>
-                                    <span class="text-decoration-line-through text-muted me-2">
-                                        {{ c.previous_start_time|date:"M d H:i" }} - {{ c.previous_end_time|time:"H:i" }}
-                                    </span>
-                                    <span class="text-success fw-bold">
-                                        &rarr; {{ c.new_start_time|date:"M d H:i" }} - {{ c.new_end_time|time:"H:i" }}
-                                    </span>
-                                </div>
-                                <div class="mt-2 text-dark bg-light p-2 rounded border">
-                                    <strong>Reason:</strong> {{ c.reason }}
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
+
+                <!-- Attendees -->
+                <div class="p-4 rounded-xl border border-slate-200/80 bg-white shadow-2xs space-y-1">
+                    <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                        <span class="material-symbols-outlined text-[16px] text-blue-600">groups</span>
+                        <span>Attendees</span>
+                    </div>
+                    <div class="text-sm font-bold text-slate-900 font-mono">{{ reservation.participant_count }} Persons</div>
+                    <div class="text-xs text-slate-500 font-mono">Venue Limit: {{ reservation.facility.capacity }} PAX</div>
+                </div>
+
+                <!-- Scheduled Date -->
+                <div class="p-4 rounded-xl border border-slate-200/80 bg-white shadow-2xs space-y-1">
+                    <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                        <span class="material-symbols-outlined text-[16px] text-amber-600">calendar_today</span>
+                        <span>Scheduled Date</span>
+                    </div>
+                    <div class="text-sm font-bold text-slate-900">{{ reservation.start_time|date:"F d, Y" }}</div>
+                    <div class="text-xs text-slate-500">{{ reservation.start_time|date:"l" }}</div>
+                </div>
+
+                <!-- Reserved Time Window -->
+                <div class="p-4 rounded-xl border border-slate-200/80 bg-white shadow-2xs space-y-1">
+                    <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                        <span class="material-symbols-outlined text-[16px] text-emerald-600">schedule</span>
+                        <span>Reserved Time Window</span>
+                    </div>
+                    <div class="text-sm font-bold text-slate-900 font-mono">{{ reservation.start_time|time:"H:i" }} &ndash; {{ reservation.end_time|time:"H:i" }}</div>
+                    <div class="text-xs text-slate-500 font-mono">Duration: {{ reservation.duration_hours }} Hours</div>
                 </div>
             </div>
-        {% endif %}
+
+            <!-- Administrative Decision Note (Rejection / Cancellation Reason) -->
+            {% if reservation.decision_reason %}
+                <div class="p-4 rounded-xl border {% if reservation.status == 'REJECTED' %}bg-rose-50 border-rose-200 text-rose-900{% else %}bg-slate-50 border-slate-200 text-slate-800{% endif %}">
+                    <div class="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider mb-1">
+                        <span class="material-symbols-outlined text-[16px]">info</span>
+                        <span>Administrative Notice</span>
+                    </div>
+                    <p class="text-xs leading-relaxed">{{ reservation.decision_reason }}</p>
+                </div>
+            {% endif %}
+
+            <!-- Footer Meta & Actions -->
+            <div class="pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                <span class="text-xs text-slate-500 font-mono">
+                    Submitted on {{ reservation.created_at|date:"M d, Y H:i" }}
+                </span>
+
+                {% if can_cancel %}
+                    <form method="post" action="{% url 'user_reservation_cancel' reservation_id=reservation.id %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-2xs transition-colors"
+                                data-confirm="Are you sure you want to cancel this reservation? This action cannot be reversed and releases the facility slot."
+                                data-confirm-title="Confirm Cancellation"
+                                data-confirm-btn="Cancel Reservation"
+                                data-confirm-variant="danger">
+                            <span class="material-symbols-outlined text-[16px]">cancel</span>
+                            <span>Cancel Reservation</span>
+                        </button>
+                    </form>
+                {% else %}
+                    {% if reservation.status in 'COMPLETED,CANCELLED,REJECTED,NO_SHOW' %}
+                        <span class="px-3 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-200">
+                            Concluded Booking
+                        </span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
     </div>
+
+    <!-- Schedule Change History (if rescheduled by admin) -->
+    {% if change_history %}
+        <div class="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-amber-600">history</span>
+                <h3 class="text-sm font-bold text-slate-900 font-display">Administrative Reschedule Notices</h3>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for c in change_history %}
+                    <div class="p-6 space-y-2 text-xs">
+                        <div class="text-slate-400 font-mono">
+                            Rescheduled on {{ c.changed_at|date:"M d, Y H:i" }}
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 font-mono">
+                            <span class="line-through text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                                {{ c.previous_start_time|date:"M d H:i" }} – {{ c.previous_end_time|time:"H:i" }}
+                            </span>
+                            <span class="material-symbols-outlined text-slate-400 text-[14px]">arrow_forward</span>
+                            <span class="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                {{ c.new_start_time|date:"M d H:i" }} – {{ c.new_end_time|time:"H:i" }}
+                            </span>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200/80 text-slate-700 mt-2">
+                            <strong class="font-bold text-slate-900">Reason:</strong> {{ c.reason }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

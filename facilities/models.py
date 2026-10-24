@@ -52,6 +52,38 @@ class Facility(models.Model):
             return (specific.is_closed, specific.open_time, specific.close_time)
         return (False, self.default_open_time, self.default_close_time)
 
+    def get_image_url(self):
+        """Returns standard high-res venue photo according to facility code or category."""
+        code_upper = (self.code or '').upper()
+        cat_lower = (self.category.name or '').lower() if self.category else ''
+
+        if 'AUD' in code_upper or 'auditorium' in cat_lower:
+            return 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1000&q=80'
+        elif 'HALL' in code_upper or 'multipurpose' in cat_lower or 'activity' in cat_lower:
+            return 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1000&q=80'
+        elif 'LAB' in code_upper or 'laborator' in cat_lower:
+            return 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1000&q=80'
+        elif 'CONF' in code_upper or 'board' in cat_lower or 'conference' in cat_lower:
+            return 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1000&q=80'
+        return 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1000&q=80'
+
+    @property
+    def image_url(self):
+        return self.get_image_url()
+
+    @property
+    def badge_color(self):
+        code_upper = (self.code or '').upper()
+        if 'AUD' in code_upper:
+            return 'bg-[#4a0808] text-white'
+        elif 'HALL' in code_upper:
+            return 'bg-[#904d00] text-white'
+        elif 'LAB' in code_upper:
+            return 'bg-[#003e38] text-[#89f5e7]'
+        elif 'CONF' in code_upper:
+            return 'bg-[#1e293b] text-white'
+        return 'bg-[#4a0808] text-white'
+
 
 class FacilityOperatingHour(models.Model):
     WEEKDAY_CHOICES = (

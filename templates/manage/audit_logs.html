@@ -1,24 +1,24 @@
 {% extends 'manage/base_admin.html' %}
 
-{% block title %}Audit Logs - Campus Admin{% endblock %}
+{% block title %}Audit Logs - BulSU CARES Console{% endblock %}
 {% block page_title %}System Audit Trail{% endblock %}
-{% block page_subtitle %}Immutable chronological audit log of operational and administrative actions{% endblock %}
+{% block page_subtitle %}Immutable chronological audit log of operational and administrative actions.{% endblock %}
 
 {% block admin_content %}
-<!-- Search & Filter Bar -->
-<div class="filter-bar">
-    <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-5">
-            <label class="form-label small fw-semibold text-muted">Search Audit Entries</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search actor, target reference, or details...">
+<!-- Search & Filter Bar strictly matching Stitch -->
+<div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/80 mb-6">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+        <div class="md:col-span-5 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Search Audit Entries</label>
+            <div class="relative rounded-lg shadow-sm">
+                <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
+                <input type="text" name="q" value="{{ search_query }}" class="block w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all" placeholder="Search actor, target reference, or details...">
             </div>
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label small fw-semibold text-muted">Action Type</label>
-            <select name="action" class="form-select">
+        <div class="md:col-span-3 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Action Type</label>
+            <select name="action" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                 <option value="">All Actions</option>
                 {% for code, label in actions %}
                     <option value="{{ code }}" {% if action_filter == code %}selected{% endif %}>{{ label }}</option>
@@ -26,104 +26,133 @@
             </select>
         </div>
 
-        <div class="col-md-2">
-            <label class="form-label small fw-semibold text-muted">Date</label>
-            <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+        <div class="md:col-span-2 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Filter Date</label>
+            <input type="date" name="date" value="{{ date_filter }}" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
         </div>
 
-        <div class="col-md-2 d-flex gap-2">
-            <button type="submit" class="btn btn-navy flex-grow-1">Filter</button>
+        <div class="md:col-span-2 flex items-center gap-2">
+            <button type="submit" class="flex-grow inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors">
+                <span class="material-symbols-outlined text-[16px]">filter_list</span>
+                <span>Filter</span>
+            </button>
             {% if search_query or action_filter or date_filter %}
-                <a href="{% url 'admin_audit_logs' %}" class="btn btn-outline-secondary" title="Reset"><i class="bi bi-x-lg"></i></a>
+                <a href="{% url 'admin_audit_logs' %}" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors" title="Reset">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                </a>
             {% endif %}
         </div>
     </form>
 </div>
 
 <!-- Audit Log Table -->
-<div class="table-responsive table-custom shadow-sm mb-4">
-    <table class="table table-hover align-middle mb-0">
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>Actor</th>
-                <th>Action</th>
-                <th>Target Reference</th>
-                <th>Details / Reason</th>
-                <th>IP Address</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for log in page_obj %}
-                <tr>
-                    <td>
-                        <div class="fw-semibold text-dark">{{ log.timestamp|date:"M d, Y" }}</div>
-                        <small class="text-muted font-monospace">{{ log.timestamp|date:"H:i:s" }}</small>
-                    </td>
-                    <td>
-                        {% if log.actor %}
-                            <div class="fw-bold text-dark">{{ log.actor.display_name }}</div>
-                            <small class="text-muted">@{{ log.actor.username }}</small>
-                        {% else %}
-                            <span class="badge bg-secondary-subtle text-secondary">System</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="badge bg-light text-dark border font-monospace">{{ log.get_action_display }}</span>
-                    </td>
-                    <td>
-                        <strong class="font-monospace text-primary small">{{ log.target_reference|default:"-" }}</strong>
-                        {% if log.target_type %}
-                            <small class="text-muted d-block">{{ log.target_type }}</small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <small class="text-muted">{{ log.details|default:"-" }}</small>
-                    </td>
-                    <td>
-                        <small class="text-muted font-monospace">{{ log.ip_address|default:"127.0.0.1" }}</small>
-                    </td>
+<div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200/80 mb-6">
+    <div class="p-5 sm:p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/60">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-[#6b1414]/10 text-bulsu-maroon flex items-center justify-center">
+                <span class="material-symbols-outlined text-[20px]">history</span>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Administrative &amp; Operational Audit Trail</h3>
+                <p class="text-xs text-slate-500">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} logged actions)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-slate-600 text-xs uppercase font-bold tracking-wider border-b border-slate-200">
+                    <th class="py-3.5 px-6 text-left">Timestamp</th>
+                    <th class="py-3.5 px-6 text-left">Actor</th>
+                    <th class="py-3.5 px-6 text-left">Action</th>
+                    <th class="py-3.5 px-6 text-left">Target Reference</th>
+                    <th class="py-3.5 px-6 text-left">Details / Reason</th>
+                    <th class="py-3.5 px-6 text-left">IP Address</th>
                 </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="6">
-                        <div class="empty-state">
-                            <i class="bi bi-journal-text empty-state-icon"></i>
-                            <div class="empty-state-title">No Audit Entries Found</div>
-                            <p class="empty-state-text">No logged events match the selected search criteria.</p>
-                            <a href="{% url 'admin_audit_logs' %}" class="btn btn-outline-secondary btn-sm">Clear Filters</a>
-                        </div>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-800">
+                {% for log in page_obj %}
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex flex-col font-mono text-xs">
+                                <span class="font-bold text-slate-900">{{ log.timestamp|date:"M d, Y" }}</span>
+                                <span class="text-slate-400 text-[11px]">{{ log.timestamp|date:"H:i:s" }}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            {% if log.actor %}
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-slate-900 text-xs">{{ log.actor.display_name }}</span>
+                                    <span class="text-[11px] text-slate-400">@{{ log.actor.username }}</span>
+                                </div>
+                            {% else %}
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">System</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <span class="px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                                {{ log.get_action_display }}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="font-mono text-xs font-bold text-slate-900">{{ log.target_reference|default:"-" }}</span>
+                                {% if log.target_type %}
+                                    <span class="text-[10px] text-slate-400 uppercase tracking-wider">{{ log.target_type }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left text-xs text-slate-600 max-w-sm">
+                            {{ log.details|default:"-" }}
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap font-mono text-xs text-slate-500">
+                            {{ log.ip_address|default:"127.0.0.1" }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-10 text-slate-400">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <span class="material-symbols-outlined text-4xl text-slate-300">manage_history</span>
+                                <p class="font-bold text-slate-700 text-sm">No Audit Entries Found</p>
+                                <p class="text-xs text-slate-400">No logged events match the selected search criteria.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<!-- Pagination -->
+<!-- Modern Pagination -->
 {% if page_obj.has_other_pages %}
-    <nav aria-label="Audit pagination">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&action={{ action_filter }}&date={{ date_filter }}">Previous</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">Previous</span></li>
-            {% endif %}
+    <div class="flex justify-center items-center gap-1.5 py-2">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&action={{ action_filter }}&date={{ date_filter }}" 
+               class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+                Previous
+            </a>
+        {% endif %}
 
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ search_query }}&action={{ action_filter }}&date={{ date_filter }}">{{ num }}</a></li>
-                {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&action={{ action_filter }}&date={{ date_filter }}">Next</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <span class="px-3 py-1.5 rounded-lg bg-[#4b0004] text-white text-xs font-bold shadow-sm">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}&q={{ search_query }}&action={{ action_filter }}&date={{ date_filter }}" 
+                   class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                    {{ num }}
+                </a>
             {% endif %}
-        </ul>
-    </nav>
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&action={{ action_filter }}&date={{ date_filter }}" 
+               class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+                Next
+            </a>
+        {% endif %}
+    </div>
 {% endif %}
 {% endblock %}

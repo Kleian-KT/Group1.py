@@ -1,102 +1,147 @@
 {% extends 'portal/base_portal.html' %}
 
-{% block title %}Submit Reservation Request - Campus Portal{% endblock %}
+{% block title %}Submit Reservation Request - BulSU CARES Portal{% endblock %}
 {% block portal_title %}New Reservation Request{% endblock %}
-{% block portal_subtitle %}Request a campus facility booking for student events, meetings, or academic activities{% endblock %}
+{% block portal_subtitle %}Request a campus facility booking for student events, organizational meetings, or academic activities{% endblock %}
 
 {% block portal_actions %}
-<a href="{% url 'user_facility_list' %}" class="btn btn-outline-secondary">
-    <i class="bi bi-buildings me-1"></i> Browse Facilities
+<a href="{% url 'user_facility_list' %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-colors">
+    <span class="material-symbols-outlined text-[16px]">domain</span>
+    <span>Browse Venues</span>
 </a>
 {% endblock %}
 
 {% block portal_content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <!-- Guidelines Alert -->
-        <div class="alert alert-info py-3 mb-4 shadow-sm" role="alert">
-            <h6 class="fw-bold mb-1"><i class="bi bi-info-circle-fill me-2"></i>Booking Guidelines & Restrictions</h6>
-            <ul class="mb-0 small ps-3">
-                <li>Maximum continuous event duration is <strong>{{ max_duration }} hours</strong>.</li>
-                <li>Bookings must be scheduled within <strong>{{ max_advance }} calendar days</strong> in advance.</li>
-                <li>All bookings must fall strictly within the facility's daily operating hours. Overnight events are not permitted.</li>
-                <li>Valid submissions are created in <strong>Pending</strong> status and reviewed by campus administration.</li>
-            </ul>
+<div class="max-w-4xl mx-auto space-y-6 mb-8">
+    <!-- Guidelines & Restrictions Banner -->
+    <div class="p-5 rounded-xl bg-amber-50/80 border border-amber-200/80 shadow-2xs">
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-outlined text-amber-600 text-[22px] shrink-0 mt-0.5">info</span>
+            <div class="space-y-1.5">
+                <h3 class="text-xs font-bold text-amber-900 uppercase tracking-wider">Booking Guidelines & Policy Constraints</h3>
+                <ul class="text-xs text-amber-800 space-y-1 list-disc list-inside">
+                    <li>Maximum continuous event duration is <strong class="font-semibold">{{ max_duration }} hours</strong>.</li>
+                    <li>Bookings must be scheduled within <strong class="font-semibold">{{ max_advance }} calendar days</strong> in advance.</li>
+                    <li>All bookings must fall strictly within the facility's daily operating hours. Overnight events are not permitted.</li>
+                    <li>Submissions are initially created in <strong class="font-semibold">Pending</strong> status and undergo review by PFLMO administration.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reservation Form Card strictly matching Stitch U3 -->
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px] text-[#4a0808]">assignment</span>
+                <h3 class="text-sm font-bold text-slate-900 font-display">Event Reservation Details</h3>
+            </div>
+            <span class="text-[11px] text-slate-400 font-medium">* Required fields</span>
         </div>
 
-        <!-- Reservation Form -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h5 class="card-title mb-0 fw-bold text-dark">
-                    <i class="bi bi-calendar-plus me-2 text-primary"></i>Event Reservation Details
-                </h5>
-            </div>
-            <div class="card-body p-4">
-                {% if form.errors %}
-                    <div class="alert alert-danger py-2 small mb-3">
-                        <ul class="mb-0 ps-3">
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-                                {% endfor %}
+        <div class="p-6 md:p-8">
+            {% if form.errors %}
+                <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs mb-6">
+                    <div class="flex items-center gap-1.5 font-bold mb-1">
+                        <span class="material-symbols-outlined text-[16px] text-rose-600">error</span>
+                        <span>Please correct the errors below:</span>
+                    </div>
+                    <ul class="list-disc list-inside space-y-0.5 pl-2">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
                             {% endfor %}
-                            {% for error in form.non_field_errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
 
-                <form method="post">
-                    {% csrf_token %}
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
 
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-muted">Select Facility <span class="text-danger">*</span></label>
-                            {{ form.facility }}
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-muted">Event Title <span class="text-danger">*</span></label>
-                            {{ form.title }}
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted">Expected Number of Attendees <span class="text-danger">*</span></label>
-                            {{ form.participant_count }}
-                            <div class="form-text">Must not exceed facility capacity.</div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted">Requested By</label>
-                            <input type="text" class="form-control bg-light" value="{{ request.user.display_name }} (@{{ request.user.username }})" readonly disabled>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted">Start Datetime <span class="text-danger">*</span></label>
-                            {{ form.start_time }}
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted">End Datetime <span class="text-danger">*</span></label>
-                            {{ form.end_time }}
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-muted">Event Purpose & Activity Outline <span class="text-danger">*</span></label>
-                            {{ form.purpose }}
-                            <div class="form-text">Provide sufficient details for the administrator to review and approve your request.</div>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                    <!-- Facility Selection -->
+                    <div class="md:col-span-12 space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Select Campus Facility <span class="text-rose-600">*</span>
+                        </label>
+                        {{ form.facility }}
+                        <span class="block text-[11px] text-slate-500">Pick an active campus hall, laboratory, or boardroom.</span>
                     </div>
 
-                    <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
-                        <a href="{% url 'user_reservation_list' %}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-navy px-4 fw-semibold">
-                            <i class="bi bi-send-check me-1"></i> Submit Reservation Request
-                        </button>
+                    <!-- Event Title -->
+                    <div class="md:col-span-12 space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Event Title <span class="text-rose-600">*</span>
+                        </label>
+                        {{ form.title }}
+                        <span class="block text-[11px] text-slate-500">Official name of the event or gathering.</span>
                     </div>
-                </form>
-            </div>
+
+                    <!-- Expected Attendees -->
+                    <div class="md:col-span-6 space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Expected Number of Attendees <span class="text-rose-600">*</span>
+                        </label>
+                        {{ form.participant_count }}
+                        <span class="block text-[11px] text-slate-500">Must not exceed the selected venue's maximum capacity.</span>
+                    </div>
+
+                    <!-- Requested By -->
+                    <div class="md:col-span-6 space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-700">Requested By</label>
+                        <input type="text" class="form-control bg-slate-100 text-slate-600 cursor-not-allowed text-xs" value="{{ request.user.display_name }} (@{{ request.user.username }})" readonly disabled>
+                        <span class="block text-[11px] text-slate-400">Authenticated student / faculty account.</span>
+                    </div>
+
+                    <!-- Start Datetime -->
+                    <div class="md:col-span-6 space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Start Datetime <span class="text-rose-600">*</span>
+                        </label>
+                        {{ form.start_time }}
+                        <span class="block text-[11px] text-slate-500">Date and start time within operating hours.</span>
+                    </div>
+
+                    <!-- End Datetime -->
+                    <div class="md:col-span-6 space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            End Datetime <span class="text-rose-600">*</span>
+                        </label>
+                        {{ form.end_time }}
+                        <span class="block text-[11px] text-slate-500">Date and conclude time (must be after start).</span>
+                    </div>
+
+                    <!-- Event Purpose -->
+                    <div class="md:col-span-12 space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Event Purpose & Activity Outline <span class="text-rose-600">*</span>
+                        </label>
+                        {{ form.purpose }}
+                        <span class="block text-[11px] text-slate-500">Provide sufficient details regarding program objectives, expected equipment, and schedule flow for administrative review.</span>
+                    </div>
+                </div>
+
+                <!-- Submission Disclaimer Note -->
+                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center gap-2.5 text-xs text-slate-600">
+                    <span class="material-symbols-outlined text-[18px] text-[#4a0808] shrink-0">info</span>
+                    <span>Submission places the timeslot on reservation hold pending administrator approval. It does not automatically guarantee clearance.</span>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <a href="{% url 'user_reservation_list' %}" class="px-4 py-2 rounded-lg bg-white border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#4a0808] hover:bg-[#6b1414] text-xs font-semibold text-white shadow-2xs transition-colors">
+                        <span class="material-symbols-outlined text-[17px]">send</span>
+                        <span>Submit Reservation Request</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

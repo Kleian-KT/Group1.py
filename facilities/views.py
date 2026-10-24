@@ -312,6 +312,42 @@ def admin_amenity_archive(request, amenity_id):
 # U2 — Basic User Facility Browsing and Availability
 # -------------------------------------------------------------
 
+def get_preview_slots_for_facility(facility, target_date):
+    """Generates 2 to 4 clean preview slots for the facility card display on Browse Facilities."""
+    try:
+        availability = calculate_facility_slots(facility, target_date)
+        if availability.get('is_closed'):
+            return {'is_closed': True, 'slots': []}
+
+        raw_slots = availability.get('slots', [])
+        if not raw_slots:
+            open_t = facility.default_open_time
+            close_t = facility.default_close_time
+            return {
+                'is_closed': False,
+                'slots': [
+                    {'start_time': open_t, 'end_time': close_t, 'is_available': True, 'reason': 'Available'}
+                ]
+            }
+
+        chunk_size = max(1, len(raw_slots) // 3)
+        preview_slots = []
+        for i in range(0, min(len(raw_slots), chunk_size * 4), chunk_size):
+            chunk = raw_slots[i:i + chunk_size]
+            if chunk:
+                is_avail = all(c['is_available'] for c in chunk)
+                reason = "Available" if is_avail else (next((c['reason'] for c in chunk if not c['is_available']), "Reserved"))
+                preview_slots.append({
+                    'start_time': chunk[0]['start_time'],
+                    'end_time': chunk[-1]['end_time'],
+                    'is_available': is_avail,
+                    'reason': reason
+                })
+        return {'is_closed': False, 'slots': preview_slots[:4]}
+    except Exception:
+        return {'is_closed': False, 'slots': []}
+
+
 @active_user_required
 def user_facility_list(request):
     search_query = request.GET.get('q', '').strip()
@@ -336,9 +372,15 @@ def user_facility_list(request):
 
     categories = FacilityCategory.objects.filter(is_active=True)
 
-    paginator = Paginator(facilities_qs, 9)
+    paginator = Paginator(facilities_qs, 8)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    today = timezone.now().date()
+    for facility in page_obj:
+        preview_data = get_preview_slots_for_facility(facility, today)
+        facility.today_slots = preview_data.get('slots', [])
+        facility.is_today_closed = preview_data.get('is_closed', False)
 
     return render(request, 'portal/facility_list.html', {
         'page_obj': page_obj,
@@ -346,7 +388,8 @@ def user_facility_list(request):
         'search_query': search_query,
         'category_id': category_id,
         'min_capacity': min_capacity,
-        'active_menu': 'facilities'
+        'active_menu': 'facilities',
+        'today': today,
     })
 
 

@@ -1,93 +1,99 @@
 {% extends 'base.html' %}
 
-{% block title %}Register - Campus Facility Reservation System{% endblock %}
+{% block title %}Register Account - BulSU CARES Portal{% endblock %}
 
 {% block layout_content %}
-<div class="min-vh-100 d-flex align-items-center justify-content-center py-5" style="background: linear-gradient(135deg, #0f2942 0%, #1e3a5f 100%);">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-6">
-                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white text-center pt-4 pb-3 border-0">
-                        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 56px; height: 56px;">
-                            <i class="bi bi-person-plus-fill fs-3"></i>
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#0d0d10] text-zinc-100 font-sans antialiased selection:bg-amber-500 selection:text-black">
+    <!-- Ambient glow -->
+    <div class="absolute -top-32 -right-32 w-96 h-96 bg-[#6b1414]/30 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 w-full max-w-2xl">
+        <div class="bg-white rounded-2xl shadow-2xl border border-zinc-200/80 overflow-hidden text-zinc-900">
+            <!-- Header -->
+            <div class="pt-8 pb-4 px-8 text-center bg-white border-b border-zinc-100">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#6b1414] to-[#4a0808] p-2.5 shadow-lg shadow-black/30 border border-amber-400/30 flex items-center justify-center mb-3">
+                    <span class="material-symbols-outlined text-amber-300 text-3xl">person_add</span>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 font-display">Create User Account</h2>
+                <p class="text-zinc-500 text-sm mt-1">Register to submit and track BulSU campus facility reservation requests</p>
+            </div>
+
+            <div class="p-8 pt-6">
+                {% if form.errors %}
+                    <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm mb-6 shadow-sm" role="alert">
+                        <div class="font-semibold flex items-center gap-1.5 mb-1.5">
+                            <span class="material-symbols-outlined text-rose-600 text-[18px]">error</span>
+                            Please correct the errors below:
                         </div>
-                        <h4 class="fw-bold text-dark mb-1">Create User Account</h4>
-                        <p class="text-muted small mb-0">Register as a student, faculty, or campus organization member</p>
+                        <ul class="list-disc list-inside space-y-1 text-xs">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
                     </div>
+                {% endif %}
 
-                    <div class="card-body p-4 pt-2">
-                        {% if form.errors %}
-                            <div class="alert alert-danger py-2 small">
-                                <ul class="mb-0 ps-3">
-                                    {% for field in form %}
-                                        {% for error in field.errors %}
-                                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-                                        {% endfor %}
-                                    {% endfor %}
-                                    {% for error in form.non_field_errors %}
-                                        <li>{{ error }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
+                <form method="post" action="{% url 'register' %}" class="space-y-4">
+                    {% csrf_token %}
 
-                        <form method="post" action="{% url 'register' %}">
-                            {% csrf_token %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-zinc-700">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-zinc-700">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
 
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-semibold text-muted">First Name</label>
-                                    {{ form.first_name }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-semibold text-muted">Last Name</label>
-                                    {{ form.last_name }}
-                                </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-zinc-700">Username <span class="text-rose-500">*</span></label>
+                            {{ form.username }}
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-zinc-700">Email Address <span class="text-rose-500">*</span></label>
+                            {{ form.email }}
+                        </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-semibold text-muted">Username <span class="text-danger">*</span></label>
-                                    {{ form.username }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-semibold text-muted">Email <span class="text-danger">*</span></label>
-                                    {{ form.email }}
-                                </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-zinc-700">Phone Number</label>
+                            {{ form.phone_number }}
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-zinc-700">Student / Employee ID</label>
+                            {{ form.student_or_employee_id }}
+                        </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-semibold text-muted">Phone Number</label>
-                                    {{ form.phone_number }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-semibold text-muted">Student / Employee ID</label>
-                                    {{ form.student_or_employee_id }}
-                                </div>
+                        <div class="col-span-1 sm:col-span-2 space-y-1">
+                            <label class="block text-xs font-semibold text-zinc-700">Department / College / Organization</label>
+                            {{ form.department }}
+                        </div>
 
-                                <div class="col-12">
-                                    <label class="form-label small fw-semibold text-muted">Department / College / Organization</label>
-                                    {{ form.department }}
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-semibold text-muted">Password <span class="text-danger">*</span></label>
-                                    {{ form.password }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-semibold text-muted">Confirm Password <span class="text-danger">*</span></label>
-                                    {{ form.password_confirm }}
-                                </div>
-                            </div>
-
-                            <button type="submit" class="btn btn-navy w-100 py-2 fw-semibold shadow-sm mt-4 mb-3">
-                                <i class="bi bi-check2-circle me-1"></i> Register Account
-                            </button>
-                        </form>
-
-                        <div class="text-center pt-2 border-top">
-                            <span class="small text-muted">Already registered?</span>
-                            <a href="{% url 'login' %}" class="small fw-semibold ms-1">Sign In</a>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-zinc-700">Password <span class="text-rose-500">*</span></label>
+                            {{ form.password }}
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-zinc-700">Confirm Password <span class="text-rose-500">*</span></label>
+                            {{ form.password_confirm }}
                         </div>
                     </div>
+
+                    <button type="submit" class="w-full mt-4 py-3.5 px-4 rounded-xl bg-gradient-to-r from-bulsu-maroon to-bulsu-maroondark hover:from-[#7e1717] hover:to-[#5c0a0a] text-white font-semibold text-sm shadow-lg shadow-red-950/20 border border-red-500/30 flex items-center justify-center gap-2 transition-all transform active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                        <span>Complete Registration</span>
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-4 border-t border-zinc-100 text-center text-xs text-zinc-500">
+                    <span>Already have an account?</span>
+                    <a href="{% url 'login' %}" class="font-bold text-bulsu-maroon hover:underline ml-1">Sign In</a>
                 </div>
             </div>
         </div>

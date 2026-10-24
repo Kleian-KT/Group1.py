@@ -1,23 +1,26 @@
 {% extends 'manage/base_admin.html' %}
 
-{% block title %}Reports and Analytics - Campus Operations{% endblock %}
-{% block page_title %}Reports & Analytics{% endblock %}
-{% block page_subtitle %}Database-backed reservation audit reporting, facility utilization calculations, and CSV exports{% endblock %}
+{% block title %}Reports and Analytics - BulSU CARES Console{% endblock %}
+{% block page_title %}Reports &amp; Analytics{% endblock %}
+{% block page_subtitle %}Database-backed reservation audit reporting, facility utilization calculations, and CSV exports.{% endblock %}
 
 {% block page_actions %}
-<div class="dropdown">
-    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="bi bi-download me-1"></i> Export CSV
+<div class="dropdown inline-block">
+    <button class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#4b0004] hover:bg-[#6b1414] text-white text-xs font-semibold shadow-sm transition-colors dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="material-symbols-outlined text-[16px]">download</span>
+        <span>Export Data (CSV)</span>
     </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow">
+    <ul class="dropdown-menu dropdown-menu-end shadow-xl border border-slate-200 rounded-xl py-1 text-xs">
         <li>
-            <a class="dropdown-item" href="{% url 'admin_reports_export_csv' %}?report_type=reservations&start_date={{ start_date }}&end_date={{ end_date }}&facility={{ facility_id }}&status={{ status_filter }}">
-                <i class="bi bi-file-earmark-spreadsheet me-2 text-primary"></i>Export Reservations Report
+            <a class="dropdown-item py-2 px-4 flex items-center gap-2 text-slate-700 hover:bg-slate-50 font-medium" href="{% url 'admin_reports_export_csv' %}?report_type=reservations&start_date={{ start_date }}&end_date={{ end_date }}&facility={{ facility_id }}&status={{ status_filter }}">
+                <span class="material-symbols-outlined text-bulsu-maroon text-[16px]">table_chart</span>
+                <span>Export Reservations Log (CSV)</span>
             </a>
         </li>
         <li>
-            <a class="dropdown-item" href="{% url 'admin_reports_export_csv' %}?report_type=utilization&start_date={{ start_date }}&end_date={{ end_date }}">
-                <i class="bi bi-bar-chart-steps me-2 text-info"></i>Export Facility Utilization Report
+            <a class="dropdown-item py-2 px-4 flex items-center gap-2 text-slate-700 hover:bg-slate-50 font-medium" href="{% url 'admin_reports_export_csv' %}?report_type=utilization&start_date={{ start_date }}&end_date={{ end_date }}">
+                <span class="material-symbols-outlined text-amber-500 text-[16px]">bar_chart</span>
+                <span>Export Facility Utilization (CSV)</span>
             </a>
         </li>
     </ul>
@@ -25,22 +28,22 @@
 {% endblock %}
 
 {% block admin_content %}
-<!-- Reporting Filter Bar -->
-<div class="filter-bar">
-    <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-3">
-            <label class="form-label small fw-semibold text-muted">From Date</label>
-            <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+<!-- Reporting Filter Bar strictly matching Stitch -->
+<div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/80 mb-6">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+        <div class="md:col-span-3 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">From Date</label>
+            <input type="date" name="start_date" value="{{ start_date }}" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label small fw-semibold text-muted">To Date</label>
-            <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+        <div class="md:col-span-3 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">To Date</label>
+            <input type="date" name="end_date" value="{{ end_date }}" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label small fw-semibold text-muted">Facility</label>
-            <select name="facility" class="form-select">
+        <div class="md:col-span-3 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Facility</label>
+            <select name="facility" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                 <option value="">All Facilities</option>
                 {% for f in facilities %}
                     <option value="{{ f.id }}" {% if facility_id == f.id|stringformat:"s" %}selected{% endif %}>{{ f.code }} - {{ f.name }}</option>
@@ -48,9 +51,9 @@
             </select>
         </div>
 
-        <div class="col-md-2">
-            <label class="form-label small fw-semibold text-muted">Status</label>
-            <select name="status" class="form-select">
+        <div class="md:col-span-2 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-700">Status</label>
+            <select name="status" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                 <option value="">All Statuses</option>
                 {% for code, label in statuses %}
                     <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
@@ -58,164 +61,187 @@
             </select>
         </div>
 
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-navy w-100" title="Apply Filters"><i class="bi bi-funnel"></i></button>
+        <div class="md:col-span-1">
+            <button type="submit" class="w-full inline-flex items-center justify-center p-2 rounded-lg bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors" title="Apply Filters">
+                <span class="material-symbols-outlined text-[18px]">filter_list</span>
+            </button>
         </div>
     </form>
 </div>
 
-<!-- Aggregated KPI Summary -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card p-3 text-center border-0 bg-light shadow-sm">
-            <div class="small text-muted fw-semibold">Total Requests</div>
-            <div class="fs-3 fw-bold text-dark">{{ total_reservations }}</div>
-        </div>
+<!-- Aggregated KPI Summary strictly matching Stitch -->
+<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
+    <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-2xs text-center">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Total Submissions</span>
+        <div class="text-2xl font-extrabold text-slate-900 font-display">{{ total_reservations }}</div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 text-center border-0 bg-light shadow-sm">
-            <div class="small text-muted fw-semibold">Pending</div>
-            <div class="fs-3 fw-bold text-warning" style="color: #d97706 !important;">{{ pending_count }}</div>
-        </div>
+    <div class="bg-white rounded-xl p-3.5 border border-slate-200 border-t-2 border-t-amber-500 shadow-2xs text-center">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 block mb-1">Pending</span>
+        <div class="text-2xl font-extrabold text-amber-600 font-display">{{ pending_count }}</div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 text-center border-0 bg-light shadow-sm">
-            <div class="small text-muted fw-semibold">Approved</div>
-            <div class="fs-3 fw-bold text-primary">{{ approved_count }}</div>
-        </div>
+    <div class="bg-white rounded-xl p-3.5 border border-slate-200 border-t-2 border-t-blue-600 shadow-2xs text-center">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700 block mb-1">Approved</span>
+        <div class="text-2xl font-extrabold text-blue-600 font-display">{{ approved_count }}</div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 text-center border-0 bg-light shadow-sm">
-            <div class="small text-muted fw-semibold">Checked In</div>
-            <div class="fs-3 fw-bold text-info" style="color: #0284c7 !important;">{{ checked_in_count }}</div>
-        </div>
+    <div class="bg-white rounded-xl p-3.5 border border-slate-200 border-t-2 border-t-teal-600 shadow-2xs text-center">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-teal-700 block mb-1">Checked In</span>
+        <div class="text-2xl font-extrabold text-teal-600 font-display">{{ checked_in_count }}</div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 text-center border-0 bg-light shadow-sm">
-            <div class="small text-muted fw-semibold">Completed</div>
-            <div class="fs-3 fw-bold text-success">{{ completed_count }}</div>
-        </div>
+    <div class="bg-white rounded-xl p-3.5 border border-slate-200 border-t-2 border-t-emerald-600 shadow-2xs text-center">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block mb-1">Completed</span>
+        <div class="text-2xl font-extrabold text-emerald-600 font-display">{{ completed_count }}</div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 text-center border-0 bg-light shadow-sm">
-            <div class="small text-muted fw-semibold">No Show</div>
-            <div class="fs-3 fw-bold" style="color: #7c3aed;">{{ no_show_count }}</div>
-        </div>
+    <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-2xs text-center">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 block mb-1">No Show</span>
+        <div class="text-2xl font-extrabold text-slate-700 font-display">{{ no_show_count }}</div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 text-center border-0 bg-light shadow-sm">
-            <div class="small text-muted fw-semibold">Rejected</div>
-            <div class="fs-3 fw-bold text-danger">{{ rejected_count }}</div>
-        </div>
+    <div class="bg-white rounded-xl p-3.5 border border-slate-200 border-t-2 border-t-rose-600 shadow-2xs text-center">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-700 block mb-1">Rejected</span>
+        <div class="text-2xl font-extrabold text-rose-600 font-display">{{ rejected_count }}</div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-3 text-center border-0 bg-light shadow-sm">
-            <div class="small text-muted fw-semibold">Cancelled</div>
-            <div class="fs-3 fw-bold text-secondary">{{ cancelled_count }}</div>
-        </div>
+    <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-2xs text-center">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Cancelled</span>
+        <div class="text-2xl font-extrabold text-slate-500 font-display">{{ cancelled_count }}</div>
     </div>
 </div>
 
 <!-- Section 1: Facility Utilization Report -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 fw-bold text-dark">
-            <i class="bi bi-speedometer2 me-2 text-info"></i>Facility Utilization Analysis
-        </h5>
-        <span class="badge bg-light text-muted border">Calculated for {{ start_date }} &ndash; {{ end_date }}</span>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Facility</th>
-                        <th>Capacity</th>
-                        <th>Location</th>
-                        <th>Active Bookings</th>
-                        <th>Total Booked Hours</th>
-                        <th>Completed Events</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for u in utilization_data %}
-                        <tr>
-                            <td>
-                                <div class="fw-bold text-dark">{{ u.facility.name }}</div>
-                                <span class="badge bg-light text-muted border font-monospace">{{ u.facility.code }}</span>
-                            </td>
-                            <td>{{ u.facility.capacity }} pax</td>
-                            <td><small class="text-muted">{{ u.facility.location }}</small></td>
-                            <td>
-                                <span class="badge bg-primary-subtle text-primary px-3 py-1 fw-bold">{{ u.booking_count }}</span>
-                            </td>
-                            <td>
-                                <strong class="text-dark">{{ u.booked_hours }} hrs</strong>
-                            </td>
-                            <td>
-                                <span class="badge bg-success-subtle text-success px-3 py-1">{{ u.completed_events }}</span>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">No facility records found.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200/80 mb-6">
+    <div class="p-5 sm:p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/60">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-[#6b1414]/10 text-bulsu-maroon flex items-center justify-center">
+                <span class="material-symbols-outlined text-[20px]">speed</span>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Facility Utilization Analysis</h3>
+                <p class="text-xs text-slate-500">Calculated for {{ start_date }} &ndash; {{ end_date }}</p>
+            </div>
         </div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+            Utilization Metrics
+        </span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-slate-600 text-xs uppercase font-bold tracking-wider border-b border-slate-200">
+                    <th class="py-3.5 px-6 text-left">Facility</th>
+                    <th class="py-3.5 px-6 text-left">Capacity</th>
+                    <th class="py-3.5 px-6 text-left">Location</th>
+                    <th class="py-3.5 px-6 text-left">Active Bookings</th>
+                    <th class="py-3.5 px-6 text-left">Total Booked Hours</th>
+                    <th class="py-3.5 px-6 text-center">Completed Events</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-800">
+                {% for u in utilization_data %}
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-slate-900 text-sm">{{ u.facility.name }}</span>
+                                <span class="font-mono text-xs text-slate-500">{{ u.facility.code }}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap font-mono text-xs text-slate-700">
+                            {{ u.facility.capacity }} pax
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap text-xs text-slate-500">
+                            {{ u.facility.location }}
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+                                {{ u.booking_count }}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap font-mono font-bold text-slate-900 text-xs">
+                            {{ u.booked_hours }} hrs
+                        </td>
+                        <td class="py-4 px-6 text-center whitespace-nowrap">
+                            <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                                {{ u.completed_events }}
+                            </span>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-6 text-slate-400 text-xs">No facility records found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
 <!-- Section 2: Detailed Reservations Report Table -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 fw-bold text-dark">
-            <i class="bi bi-table me-2 text-primary"></i>Reservations Audit Table
-        </h5>
-        <small class="text-muted">Displaying up to 100 matching entries</small>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Reference</th>
-                        <th>Facility</th>
-                        <th>Applicant</th>
-                        <th>Event Title</th>
-                        <th>Schedule</th>
-                        <th>Duration</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in reservations_list %}
-                        <tr>
-                            <td><span class="fw-bold font-monospace text-primary">{{ r.reference }}</span></td>
-                            <td>{{ r.facility.name }}</td>
-                            <td>
-                                <div class="fw-semibold text-dark">{{ r.user.display_name }}</div>
-                                <small class="text-muted">@{{ r.user.username }}</small>
-                            </td>
-                            <td>{{ r.title }}</td>
-                            <td>
-                                <div>{{ r.start_time|date:"M d, Y" }}</div>
-                                <small class="text-muted">{{ r.start_time|time:"H:i" }} &ndash; {{ r.end_time|time:"H:i" }}</small>
-                            </td>
-                            <td>{{ r.duration_hours }} hrs</td>
-                            <td><span class="status-badge status-{{ r.status|lower }}">{{ r.get_status_display }}</span></td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                No reservations match the selected reporting filters.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200/80">
+    <div class="p-5 sm:p-6 flex items-center justify-between border-b border-slate-100 bg-slate-50/60">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[20px]">table_chart</span>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-slate-900 font-display">Reservations Audit Table</h3>
+                <p class="text-xs text-slate-500">Displaying up to 100 matching entries</p>
+            </div>
         </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-slate-600 text-xs uppercase font-bold tracking-wider border-b border-slate-200">
+                    <th class="py-3.5 px-6 text-left">Reference</th>
+                    <th class="py-3.5 px-6 text-left">Facility</th>
+                    <th class="py-3.5 px-6 text-left">Applicant</th>
+                    <th class="py-3.5 px-6 text-left">Event Title</th>
+                    <th class="py-3.5 px-6 text-left">Schedule</th>
+                    <th class="py-3.5 px-6 text-left">Duration</th>
+                    <th class="py-3.5 px-6 text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-800">
+                {% for r in reservations_list %}
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <span class="font-mono text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-800 font-bold border border-slate-200">{{ r.reference }}</span>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap text-xs font-semibold text-slate-900">
+                            {{ r.facility.name }}
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-slate-900 text-xs">{{ r.user.display_name }}</span>
+                                <span class="text-[11px] text-slate-400">@{{ r.user.username }}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left text-xs font-medium text-slate-800">
+                            {{ r.title }}
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap">
+                            <div class="flex flex-col font-mono text-xs">
+                                <span class="text-slate-900">{{ r.start_time|date:"M d, Y" }}</span>
+                                <span class="text-slate-400 text-[11px]">{{ r.start_time|time:"H:i" }} &ndash; {{ r.end_time|time:"H:i" }}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-left whitespace-nowrap font-mono text-xs text-slate-700">
+                            {{ r.duration_hours }} hrs
+                        </td>
+                        <td class="py-4 px-6 text-center whitespace-nowrap">
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                {{ r.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-slate-400 text-xs">
+                            No reservations match the selected reporting filters.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

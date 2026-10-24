@@ -1,85 +1,136 @@
 {% extends 'base.html' %}
 
 {% block layout_content %}
-<header class="portal-navbar navbar navbar-expand-lg navbar-dark sticky-top no-print">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'user_dashboard' %}">
-            <i class="bi bi-building-check text-primary fs-4"></i>
-            <span>Campus Reservations</span>
-        </a>
-
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNav" aria-controls="portalNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="portalNav">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link {% if active_menu == 'dashboard' %}active text-white fw-bold{% endif %}" href="{% url 'user_dashboard' %}">
-                        <i class="bi bi-house-door me-1"></i> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if active_menu == 'facilities' %}active text-white fw-bold{% endif %}" href="{% url 'user_facility_list' %}">
-                        <i class="bi bi-buildings me-1"></i> Browse Facilities
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if active_menu == 'reservations' %}active text-white fw-bold{% endif %}" href="{% url 'user_reservation_list' %}">
-                        <i class="bi bi-calendar-check me-1"></i> My Reservations
-                    </a>
-                </li>
-            </ul>
-
-            <div class="d-flex align-items-center gap-3">
-                <a href="{% url 'user_profile' %}" class="btn btn-outline-light btn-sm d-flex align-items-center gap-2">
-                    <i class="bi bi-person-circle"></i>
-                    <span>{{ request.user.first_name|default:request.user.username }}</span>
+<div class="min-h-screen flex flex-col justify-between bg-[#f8fafc] text-slate-800 font-sans antialiased selection:bg-amber-500 selection:text-black">
+    <!-- BEGIN: MainHeader strictly matching Stitch -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-2xs no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Left: Logo & Branding -->
+                <a class="flex items-center gap-3 group" href="{% url 'user_dashboard' %}">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6b1414] to-[#4a0808] p-1.5 shadow-sm border border-amber-400/30 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105">
+                        <span class="material-symbols-outlined text-amber-300 text-2xl">account_balance</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-base font-extrabold text-[#4a0808] leading-tight tracking-tight uppercase font-display">BULSU CARES</span>
+                        <span class="text-[11px] text-slate-500 font-medium">Campus Facilities Reservation</span>
+                    </div>
                 </a>
-                <form action="{% url 'logout' %}" method="post" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-sm">
-                        <i class="bi bi-box-arrow-right"></i> Sign Out
-                    </button>
-                </form>
+
+                <!-- Center: Primary Navigation Links strictly matching Stitch -->
+                <nav class="hidden md:flex items-center space-x-8 text-xs font-semibold">
+                    <a class="{% if active_menu == 'dashboard' %}text-[#4a0808] font-bold border-b-2 border-[#4a0808] pb-1.5{% else %}text-slate-600 hover:text-[#4a0808] transition-colors pb-1.5{% endif %}" 
+                       href="{% url 'user_dashboard' %}">
+                        Dashboard
+                    </a>
+                    <a class="{% if active_menu == 'facilities' %}text-[#4a0808] font-bold border-b-2 border-[#4a0808] pb-1.5{% else %}text-slate-600 hover:text-[#4a0808] transition-colors pb-1.5{% endif %}" 
+                       href="{% url 'user_facility_list' %}">
+                        Browse Facilities
+                    </a>
+                    <a class="{% if active_menu == 'reservations' %}text-[#4a0808] font-bold border-b-2 border-[#4a0808] pb-1.5{% else %}text-slate-600 hover:text-[#4a0808] transition-colors pb-1.5{% endif %}" 
+                       href="{% url 'user_reservation_list' %}">
+                        My Reservations
+                    </a>
+                </nav>
+
+                <!-- Right: Admin pill (if staff), User Profile Pill & Sign Out -->
+                <div class="flex items-center gap-2.5">
+                    {% if request.user.role == 'ADMIN' %}
+                        <a href="{% url 'admin_dashboard' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition-colors">
+                            <span class="material-symbols-outlined text-[15px]">admin_panel_settings</span>
+                            <span class="hidden sm:inline">Admin Console</span>
+                        </a>
+                    {% endif %}
+
+                    <!-- User Pill strictly matching Stitch -->
+                    <a href="{% url 'user_profile' %}" class="flex items-center bg-[#eff4ff] hover:bg-[#e0ecff] border border-blue-100 rounded-full py-1.5 px-3 gap-2.5 transition-colors">
+                        <div class="w-7 h-7 rounded-full bg-[#4a0808] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                        </div>
+                        <div class="hidden sm:flex flex-col text-left">
+                            <span class="text-xs font-bold text-slate-900 leading-tight">{{ request.user.display_name|default:request.user.username }}</span>
+                            <span class="text-[10px] text-slate-500 leading-none mt-0.5">{{ request.user.department|default:"Campus Member"|truncatechars:20 }}</span>
+                        </div>
+                    </a>
+
+                    <!-- Sign Out Form Button with Confirmation Modal -->
+                    <form action="{% url 'logout' %}" method="post" class="m-0 inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors shadow-2xs" 
+                                title="Sign Out"
+                                data-confirm="Are you sure you want to sign out of the BulSU Portal?"
+                                data-confirm-title="Confirm Sign Out"
+                                data-confirm-btn="Sign Out"
+                                data-confirm-variant="danger">
+                            <span class="material-symbols-outlined text-[16px] text-slate-500">logout</span>
+                            <span class="hidden md:inline">Sign Out</span>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
-</header>
+    </header>
+    <!-- END: MainHeader -->
 
-<div class="container py-4 flex-grow-1">
-    <!-- Flash Messages -->
-    {% if messages %}
-        <div class="row mb-3">
-            <div class="col-12">
+    <!-- Main Content Wrapper -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <!-- Flash Messages -->
+        {% if messages %}
+            <div class="space-y-3">
                 {% for message in messages %}
-                    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show shadow-sm" role="alert">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="p-4 rounded-xl border flex items-center justify-between {% if message.tags == 'error' %}bg-rose-50 border-rose-200 text-rose-900{% elif message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-900{% else %}bg-blue-50 border-blue-200 text-blue-900{% endif %} shadow-sm" role="alert">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-[20px]">
+                                {% if message.tags == 'error' %}error{% elif message.tags == 'success' %}check_circle{% else %}info{% endif %}
+                            </span>
+                            <div class="text-sm font-medium">{{ message }}</div>
+                        </div>
                     </div>
                 {% endfor %}
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Page Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 pb-2 border-bottom">
-        <div>
-            <h2 class="h3 fw-bold text-dark mb-1">{% block portal_title %}Campus Portal{% endblock %}</h2>
-            <p class="text-muted mb-0">{% block portal_subtitle %}Reserve facilities and track event bookings{% endblock %}</p>
+        <!-- Page Header & Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 font-display">{% block portal_title %}Campus Portal{% endblock %}</h1>
+                <p class="text-xs sm:text-sm text-slate-500 font-medium">{% block portal_subtitle %}Reserve facilities and track event bookings{% endblock %}</p>
+            </div>
+            <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+                {% block portal_actions %}{% endblock %}
+            </div>
         </div>
-        <div class="mt-2 mt-md-0">
-            {% block portal_actions %}{% endblock %}
-        </div>
-    </div>
 
-    {% block portal_content %}{% endblock %}
+        {% block portal_content %}{% endblock %}
+    </main>
+
+    <!-- BEGIN: MainFooter strictly matching Stitch -->
+    <footer class="bg-[#eff4ff] border-t border-blue-100 py-4 text-xs text-slate-600 no-print" data-purpose="institutional-footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <!-- Left: Institutional Identity -->
+                <div class="flex items-center gap-2.5">
+                    <div class="w-6 h-6 rounded bg-[#4a0808] flex items-center justify-center text-white flex-shrink-0">
+                        <span class="material-symbols-outlined text-[14px]">school</span>
+                    </div>
+                    <span class="font-bold text-[#4a0808] text-xs">Bulacan State University</span>
+                    <span class="text-slate-300 font-light">|</span>
+                    <span class="text-slate-600 text-xs">Physical Facilities and Logistics Management Office</span>
+                </div>
+                <!-- Center: Quick Footer Links -->
+                <div class="flex items-center space-x-6 text-xs text-slate-600">
+                    <span class="hover:text-[#4a0808] transition-colors cursor-pointer">Campus Guidelines</span>
+                    <span class="hover:text-[#4a0808] transition-colors cursor-pointer">Reservation Policies</span>
+                    <span class="hover:text-[#4a0808] transition-colors cursor-pointer">Helpdesk</span>
+                </div>
+                <!-- Right: Copyright -->
+                <div class="text-xs text-slate-500 whitespace-nowrap">
+                    &copy; 2026 BulSU Facilities Portal. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- END: MainFooter -->
 </div>
-
-<footer class="bg-white border-top py-3 text-center text-muted no-print mt-auto">
-    <div class="container">
-        <small>&copy; 2026 Campus Facility Reservation Management System. Academic Engineering Project.</small>
-    </div>
-</footer>
 {% endblock %}
