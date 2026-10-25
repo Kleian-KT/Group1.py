@@ -115,6 +115,24 @@ Templates --> Client : 11. Rendered HTML + CSRF Response
 @enduml
 ```
 
+#### MTV Diagram Code for Lucidchart (UML Sequence Markup)
+*To use in Lucidchart: Open shape panel &rarr; select **UML Sequence** &rarr; click **Use Markup** &rarr; paste the block below &rarr; click **Build**.*
+
+```text
+Browser -> Middleware: 1. HTTP Request (GET/POST)
+Middleware -> URLDispatcher: 2. Match URL Pattern
+URLDispatcher -> ViewLayer: 3. Invoke View Handler
+ViewLayer -> FormValidation: 4. Bind & Validate Input
+ViewLayer -> ServiceLayer: 5. Execute Business Rules
+ServiceLayer -> ModelORM: 6. select_for_update() Lock
+ModelORM -> RelationalDatabase: 7. Execute SQL
+RelationalDatabase --> ModelORM: 8. Return Record Set
+ModelORM --> ServiceLayer: 9. Return Model Entities
+ServiceLayer --> ViewLayer: 10. Return Validated Outcome
+ViewLayer -> TemplateEngine: 11. Pass Context Dictionary
+TemplateEngine --> Browser: 12. Rendered HTML + CSRF Response
+```
+
 ---
 
 ### 3.2 System Architecture
@@ -257,6 +275,24 @@ ORM <--> DB
 @enduml
 ```
 
+#### System Architecture Code for Lucidchart (UML Sequence Markup)
+*To use in Lucidchart: In **UML Sequence** shape panel, click **Use Markup**, paste the text below, and click **Build**.*
+
+```text
+ClientDevice -> SecurityGateway: 1. Send HTTPS Request
+SecurityGateway -> RBACController: 2. Check Session & Role
+alt Role: BASIC_USER
+    RBACController -> PortalSubsystem: 3a. Route to /portal/
+    PortalSubsystem -> ConflictEngine: 4a. Check Facility Slots
+    ConflictEngine -> Database: 5a. Query Active Bookings
+else Role: ADMIN
+    RBACController -> AdminSubsystem: 3b. Route to /manage/
+    AdminSubsystem -> ConcurrencyLock: 4b. Acquire In-Process Lock
+    ConcurrencyLock -> Database: 5b. Atomic select_for_update()
+end
+Database --> ClientDevice: 6. Return Server-Rendered HTML
+```
+
 ---
 
 ### 3.3 User Roles and Access Control
@@ -397,6 +433,33 @@ NO_SHOW --> [*]
 COMPLETED --> [*]
 
 @enduml
+```
+
+#### Reservation Workflow Code for Lucidchart (UML Sequence Markup)
+*To use in Lucidchart: In **UML Sequence** shape panel, click **Use Markup**, paste the text below, and click **Build**.*
+
+```text
+User -> ReservationSystem: 1. Submit Booking Form (PENDING)
+Admin -> ReservationSystem: 2. Review Request Details
+alt Approved
+    Admin -> ReservationSystem: 3a. Approve Booking (APPROVED)
+    ReservationSystem -> Calendar: 4a. Lock Timeslot [start, end)
+else Rejected
+    Admin -> ReservationSystem: 3b. Reject Booking (REJECTED)
+    ReservationSystem -> Requester: 4b. Notify with Reason
+else Cancelled
+    Requester -> ReservationSystem: 3c. Cancel Request (CANCELLED)
+    ReservationSystem -> Calendar: 4c. Release Timeslot
+end
+
+opt Day of Event Operations
+    Admin -> EventOperations: 5a. Record Check-In (CHECKED_IN)
+    Admin -> EventOperations: 6a. Conclude Event (COMPLETED)
+end
+
+opt Absence Detected
+    Admin -> EventOperations: 5b. Flag No-Show (NO_SHOW)
+end
 ```
 
 ---
@@ -794,6 +857,156 @@ Reservation ||--|| EventRecord : "1:1 operational record"
 Reservation ||--o{ ResChange : "reschedule revisions"
 
 @enduml
+```
+
+---
+
+#### Database ERD SQL for Lucidchart (Native Database Import)
+*To use in Lucidchart: In left shape panel &rarr; click **+ More Shapes** &rarr; check **Entity Relationship** &rarr; click **Import** &rarr; select **PostgreSQL** or **Standard SQL** &rarr; paste the DDL script below &rarr; click **Import**. Lucidchart will automatically generate all 12 tables, fields, types, PK/FK tags, and relationship lines.*
+
+```sql
+CREATE TABLE accounts_user (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(128) NOT NULL,
+    email VARCHAR(254) NOT NULL,
+    first_name VARCHAR(150),
+    last_name VARCHAR(150),
+    role VARCHAR(20) NOT NULL,
+    phone_number VARCHAR(30),
+    department VARCHAR(100),
+    student_or_employee_id VARCHAR(50),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    date_joined TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE facilities_facilitycategory (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE facilities_facility (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(30) NOT NULL UNIQUE,
+    name VARCHAR(150) NOT NULL,
+    category_id INTEGER NOT NULL REFERENCES facilities_facilitycategory(id),
+    location VARCHAR(200) NOT NULL,
+    capacity INTEGER NOT NULL,
+    description TEXT,
+    default_open_time TIME NOT NULL,
+    default_close_time TIME NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE facilities_amenity (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    icon VARCHAR(50),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE facilities_facilityamenity (
+    id SERIAL PRIMARY KEY,
+    facility_id INTEGER NOT NULL REFERENCES facilities_facility(id),
+    amenity_id INTEGER NOT NULL REFERENCES facilities_amenity(id),
+    quantity INTEGER NOT NULL DEFAULT 1,
+    notes VARCHAR(200),
+    created_at TIMESTAMP NOT NULL,
+    CONSTRAINT uq_facility_amenity UNIQUE (facility_id, amenity_id)
+);
+
+CREATE TABLE facilities_facilityoperatinghour (
+    id SERIAL PRIMARY KEY,
+    facility_id INTEGER NOT NULL REFERENCES facilities_facility(id),
+    day_of_week INTEGER NOT NULL,
+    open_time TIME NOT NULL,
+    close_time TIME NOT NULL,
+    is_closed BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT uq_facility_day UNIQUE (facility_id, day_of_week)
+);
+
+CREATE TABLE reservations_reservation (
+    id SERIAL PRIMARY KEY,
+    reference VARCHAR(32) NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL REFERENCES accounts_user(id),
+    facility_id INTEGER NOT NULL REFERENCES facilities_facility(id),
+    title VARCHAR(200) NOT NULL,
+    purpose TEXT NOT NULL,
+    participant_count INTEGER NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    decision_by_id INTEGER REFERENCES accounts_user(id),
+    decision_at TIMESTAMP,
+    decision_reason TEXT,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE reservations_closureblock (
+    id SERIAL PRIMARY KEY,
+    facility_id INTEGER NOT NULL REFERENCES facilities_facility(id),
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    reason TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by_id INTEGER NOT NULL REFERENCES accounts_user(id),
+    created_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE reservations_reservationchange (
+    id SERIAL PRIMARY KEY,
+    reservation_id INTEGER NOT NULL REFERENCES reservations_reservation(id),
+    previous_start_time TIMESTAMP NOT NULL,
+    previous_end_time TIMESTAMP NOT NULL,
+    new_start_time TIMESTAMP NOT NULL,
+    new_end_time TIMESTAMP NOT NULL,
+    reason TEXT NOT NULL,
+    changed_by_id INTEGER NOT NULL REFERENCES accounts_user(id),
+    changed_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE events_eventrecord (
+    id SERIAL PRIMARY KEY,
+    reservation_id INTEGER NOT NULL UNIQUE REFERENCES reservations_reservation(id),
+    check_in_time TIMESTAMP,
+    checked_in_by_id INTEGER REFERENCES accounts_user(id),
+    actual_start_time TIMESTAMP,
+    actual_end_time TIMESTAMP,
+    attendance_status VARCHAR(20) NOT NULL,
+    incident_notes TEXT,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE audit_settings_auditlog (
+    id SERIAL PRIMARY KEY,
+    actor_id INTEGER REFERENCES accounts_user(id),
+    action VARCHAR(50) NOT NULL,
+    target_type VARCHAR(60),
+    target_id VARCHAR(60),
+    target_reference VARCHAR(150),
+    details TEXT,
+    ip_address VARCHAR(45),
+    timestamp TIMESTAMP NOT NULL
+);
+
+CREATE TABLE audit_settings_systemsetting (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(60) NOT NULL UNIQUE,
+    value VARCHAR(255) NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMP NOT NULL
+);
 ```
 
 ---
