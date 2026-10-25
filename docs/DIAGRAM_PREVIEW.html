@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BulSU CARES - High-Resolution System & Database Diagrams</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        primaryColor: '#F3E8E8',
+        primaryTextColor: '#4A0808',
+        primaryBorderColor: '#800000',
+        lineColor: '#6B7280',
+        secondaryColor: '#EFF6FF',
+        tertiaryColor: '#F8FAFC'
+      },
+      flowchart: {
+        curve: 'basis',
+        htmlLabels: true
+      },
+      er: {
+        useMaxWidth: false
+      }
+    });
+  </script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+    .mermaid svg {
+      max-width: 100% !important;
+      height: auto !important;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-[#4A0808] text-white py-6 px-8 shadow-md border-b-4 border-[#D4AF37]">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-amber-400 text-stone-900">IT 401W Final Project B</span>
+          <span class="text-xs text-stone-300">Dr. Aaron Paul M. Dela Rosa</span>
+        </div>
+        <h1 class="text-2xl font-extrabold tracking-tight">BulSU CARES - System & Database Architecture Diagrams</h1>
+        <p class="text-xs text-stone-300 mt-1">High-fidelity diagram viewer with zero overlapping connectors. Ready for project submission.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="window.print()" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-semibold transition border border-white/20">
+          Print / Export PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-6xl mx-auto px-6 py-8 space-y-12">
+
+    <!-- Tips Banner -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 text-blue-900 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between shadow-sm">
+      <div>
+        <h2 class="font-bold text-base flex items-center gap-2">
+          <span>💡</span> Why draw.io looked scrambled
+        </h2>
+        <p class="text-sm text-blue-800 mt-1">
+          Draw.io's PlantUML importer uses a basic approximate converter rather than real Graphviz or Dagre layout engines, causing tangled lines and overlapping labels. Below are the official, perfectly rendered vector diagrams. You can right-click any diagram to <strong>Copy Image</strong> or use <a href="https://mermaid.live" target="_blank" class="underline font-bold text-blue-700">mermaid.live</a> for 1-click high-res PNG export!
+        </p>
+      </div>
+      <a href="https://mermaid.live" target="_blank" class="whitespace-nowrap px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow transition">
+        Open Mermaid.live &rarr;
+      </a>
+    </div>
+
+    <!-- Diagram 3.1: MTV Architecture -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">Section 3.1</span>
+          <h2 class="text-xl font-bold text-slate-900">MTV (Model-Template-View) Architecture Diagram</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Django request-response lifecycle with Service Layer separation</p>
+        </div>
+        <span class="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">Clean Orthogonal Flow</span>
+      </div>
+      <div class="p-6 overflow-x-auto bg-slate-50/50 flex justify-center">
+        <div class="mermaid w-full max-w-4xl">
+flowchart TD
+    Client(["User / Admin Web Browser<br/>(HTTP / HTTPS)"])
+    
+    subgraph Django_Framework ["Django Web Application Framework Core"]
+        Middleware["Middleware Pipeline<br/>(CSRF, Session, ActiveUserEnforcementMiddleware)"]
+        URL["URL Dispatcher<br/>(config/urls.py)"]
+        View["View Layer / Controllers<br/>(accounts, facilities, reservations, events)"]
+        Forms["Form & Validation Layer<br/>(ModelForms, Sanitizers)"]
+        Services["Domain Service Layer<br/>(Conflict Engine, Concurrency, State Machine)"]
+        Models["Model / ORM Layer<br/>(models.py - QuerySets, Managers)"]
+        Templates["Template Presentation Layer<br/>(Django DTL + Google Stitch Tokens)"]
+    end
+    
+    DB[("Relational Database<br/>(SQLite / PostgreSQL)")]
+
+    Client -->|"1. HTTP Request (GET/POST)"| Middleware
+    Middleware -->|"2. Preprocessed Request"| URL
+    URL -->|"3. Route Match & Parameters"| View
+    View -->|"4. Form Cleaning & Validation"| Forms
+    View -->|"5. Execute Business Rules"| Services
+    Services -->|"6. Atomic Transactions (select_for_update)"| Models
+    Models <-->|"7. SQL Queries & Record Fetch"| DB
+    Models -->|"8. QuerySets & Domain Entities"| Services
+    Services -->|"9. Validated Outcomes & State"| View
+    View -->|"10. Context Dictionary"| Templates
+    Templates -->|"11. Server-Rendered HTML5 Response"| Client
+        </div>
+      </div>
+    </section>
+
+    <!-- Diagram 3.2: System Architecture -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">Section 3.2</span>
+          <h2 class="text-xl font-bold text-slate-900">Three-Tier System Architecture</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Presentation (Portal vs Admin), Business Logic Engines, and Relational Persistence</p>
+        </div>
+        <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-full border border-purple-200">Three-Tier Architecture</span>
+      </div>
+      <div class="p-6 overflow-x-auto bg-slate-50/50 flex justify-center">
+        <div class="mermaid w-full max-w-4xl">
+flowchart TB
+    subgraph Tier1 ["Tier 1: Presentation Tier (Client Devices)"]
+        UserBrowser["Basic User Browser<br/>(Student / Faculty)"]
+        AdminBrowser["Administrator Browser<br/>(PFLMO Staff)"]
+    end
+
+    subgraph Tier2 ["Tier 2: Application Tier (Django 6.0 / Python 3.14)"]
+        direction TB
+        SecurityGate["Security & Auth Gateway<br/>(Django Auth, SessionGuard, RBAC Route Filters)"]
+        
+        subgraph Subsystems ["Application Subsystems"]
+            PortalModule["User Portal Subsystem (/portal/)<br/>• Facility Catalog & Live Slots (U2)<br/>• Request Submission Form (U3)<br/>• Track & Cancel Own Bookings (U4)<br/>• Profile Management (U1)"]
+            AdminModule["Custom Admin Subsystem (/manage/)<br/>• Operational KPI Dashboard (A7)<br/>• User Account Management (A1)<br/>• Facility & Amenity Management (A2)<br/>• Review & Approval Engine (A3)<br/>• Calendar & Approved Rescheduling (A4)<br/>• Event Check-in & Completion (A5)<br/>• Closure & Maintenance Blocks (A6)<br/>• System Settings & Audit Logs (A8)"]
+        end
+
+        subgraph CoreEngines ["Core Domain Logic Services"]
+            ConflictEngine["Interval Conflict Engine<br/>[start, end) Mathematics"]
+            LockManager["Concurrency Manager<br/>Thread Lock + select_for_update"]
+            StateMachine["State Machine Engine<br/>Terminal State Locks"]
+            AuditEngine["Audit Logger (22 Actions)"]
+            ReportEngine["Reporting & CSV Sanitizer"]
+        end
+    end
+
+    subgraph Tier3 ["Tier 3: Persistence Tier"]
+        ORM["Django ORM Layer"]
+        Database[("Relational Database<br/>(SQLite / PostgreSQL)")]
+    end
+
+    UserBrowser --> SecurityGate
+    AdminBrowser --> SecurityGate
+    
+    SecurityGate -->|Role: BASIC_USER| PortalModule
+    SecurityGate -->|Role: ADMIN| AdminModule
+    
+    PortalModule --> ConflictEngine
+    PortalModule --> StateMachine
+    
+    AdminModule --> LockManager
+    AdminModule --> ConflictEngine
+    AdminModule --> StateMachine
+    AdminModule --> AuditEngine
+    AdminModule --> ReportEngine
+    
+    ConflictEngine --> ORM
+    LockManager --> ORM
+    StateMachine --> ORM
+    AuditEngine --> ORM
+    ReportEngine --> ORM
+    
+    ORM <--> Database
+        </div>
+      </div>
+    </section>
+
+    <!-- Diagram 3.4: Reservation Workflow -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">Section 3.4</span>
+          <h2 class="text-xl font-bold text-slate-900">Reservation Workflow State Machine</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Finite state machine detailing all 7 lifecycle states and administrative actions</p>
+        </div>
+        <span class="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-full border border-amber-200">7 States State Machine</span>
+      </div>
+      <div class="p-6 overflow-x-auto bg-slate-50/50 flex justify-center">
+        <div class="mermaid w-full max-w-3xl">
+stateDiagram-v2
+    [*] --> PENDING: User Submits Request (U3)<br/>(Validates hours, advance window, capacity)
+
+    PENDING --> APPROVED: Admin Approves (A3)<br/>(Atomic lock + Conflict recheck)
+    PENDING --> REJECTED: Admin Rejects (A3)<br/>(Mandatory rejection reason)
+    PENDING --> CANCELLED: Requester Cancels (U4)<br/>(Prior to event start)
+
+    APPROVED --> CHECKED_IN: Admin Records Check-In (A5)<br/>(Event day actual arrival)
+    APPROVED --> CANCELLED: Admin or User Cancels<br/>(Releases slot immediately)
+    APPROVED --> NO_SHOW: Admin Records No-Show (A5)<br/>(After scheduled end elapsed)
+    APPROVED --> APPROVED: Admin Reschedules (A4)<br/>(Saves history in ReservationChange)
+
+    CHECKED_IN --> COMPLETED: Admin Records Completion (A5)<br/>(Actual end time recorded)
+
+    REJECTED --> [*]: Terminal State (Slot Free)
+    CANCELLED --> [*]: Terminal State (Slot Free)
+    NO_SHOW --> [*]: Terminal State (Occupied History)
+    COMPLETED --> [*]: Terminal State (Archived for Utilization)
+        </div>
+      </div>
+    </section>
+
+    <!-- Diagram 4.1: Database Entity-Relationship Diagram -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">Section 4.1</span>
+          <h2 class="text-xl font-bold text-slate-900">Database Entity-Relationship Diagram (ERD)</h2>
+          <p class="text-xs text-slate-500 mt-0.5">12 Normalized 3NF Entities with Primary Keys, Foreign Keys, and Multiplicities</p>
+        </div>
+        <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full border border-blue-200">12 3NF Entities</span>
+      </div>
+      <div class="p-6 overflow-x-auto bg-slate-50/50 flex justify-center">
+        <div class="mermaid w-full max-w-4xl">
+erDiagram
+    User ||--o{ Reservation : "submits"
+    User ||--o{ ClosureBlock : "creates"
+    User ||--o{ ReservationChange : "reschedules"
+    User ||--o{ EventRecord : "checks in"
+    User ||--o{ AuditLog : "initiates action"
+    
+    FacilityCategory ||--o{ Facility : "classifies"
+    Facility ||--o{ FacilityAmenity : "equips"
+    Amenity ||--o{ FacilityAmenity : "cataloged in"
+    Facility ||--o{ FacilityOperatingHour : "operates under"
+    Facility ||--o{ Reservation : "hosts"
+    Facility ||--o{ ClosureBlock : "undergoes"
+    
+    Reservation ||--|| EventRecord : "tracks execution (1:1)"
+    Reservation ||--o{ ReservationChange : "maintains history"
+
+    User {
+        int id PK
+        string username UK
+        string email
+        string role "BASIC_USER | ADMIN"
+        string department
+        string student_or_employee_id
+        boolean is_active
+        datetime date_joined
+    }
+
+    FacilityCategory {
+        int id PK
+        string name UK
+        text description
+        boolean is_active
+        datetime created_at
+    }
+
+    Facility {
+        int id PK
+        string code UK
+        string name
+        int category_id FK
+        string location
+        int capacity
+        time default_open_time
+        time default_close_time
+        boolean is_active
+    }
+
+    Amenity {
+        int id PK
+        string name UK
+        string icon
+        boolean is_active
+    }
+
+    FacilityAmenity {
+        int id PK
+        int facility_id FK
+        int amenity_id FK
+        int quantity
+        string notes
+    }
+
+    FacilityOperatingHour {
+        int id PK
+        int facility_id FK
+        int day_of_week "0=Mon .. 6=Sun"
+        time open_time
+        time close_time
+        boolean is_closed
+    }
+
+    Reservation {
+        int id PK
+        string reference UK
+        int user_id FK
+        int facility_id FK
+        string title
+        datetime start_time
+        datetime end_time
+        string status
+        int decision_by_id FK
+        datetime decision_at
+        text decision_reason
+    }
+
+    ClosureBlock {
+        int id PK
+        int facility_id FK
+        datetime start_time
+        datetime end_time
+        text reason
+        boolean is_active
+        int created_by_id FK
+    }
+
+    ReservationChange {
+        int id PK
+        int reservation_id FK
+        datetime previous_start_time
+        datetime previous_end_time
+        datetime new_start_time
+        datetime new_end_time
+        text reason
+        int changed_by_id FK
+        datetime changed_at
+    }
+
+    EventRecord {
+        int id PK
+        int reservation_id FK,UK
+        datetime check_in_time
+        int checked_in_by_id FK
+        datetime actual_start_time
+        datetime actual_end_time
+        string attendance_status
+        text incident_notes
+    }
+
+    AuditLog {
+        int id PK
+        int actor_id FK
+        string action
+        string target_type
+        string target_id
+        string target_reference
+        text details
+        datetime timestamp
+    }
+
+    SystemSetting {
+        int id PK
+        string key UK
+        string value
+        string description
+        datetime updated_at
+    }
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-12">
+    BulSU Campus Facility Reservation and Event Scheduling System &bull; IT 401W Final Project B
+  </footer>
+
+</body>
+</html>
