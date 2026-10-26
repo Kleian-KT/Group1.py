@@ -27,36 +27,39 @@ class Command(BaseCommand):
             defaults={'value': '30', 'description': 'Maximum advance booking window in days'}
         )
 
-        # 2. Users
-        # Admin Account
+        # 2. Users (Exactly 1 Admin, 11 Basic Users)
+        # Admin Account (Strictly 1 Admin - No others added)
         admin_user, _ = User.objects.update_or_create(
-            username='admin',
+            username='glenardsteevenrmayor',
             defaults={
-                'email': 'admin@campus.edu',
-                'first_name': 'System',
-                'last_name': 'Administrator',
+                'email': 'glenardsteevenrmayor@gmail.com',
+                'first_name': 'Glenard Steeven',
+                'last_name': 'Mayor',
                 'role': User.ROLE_ADMIN,
-                'department': 'Campus Operations & Facilities',
-                'student_or_employee_id': 'EMP-0001',
-                'phone_number': '+63 917 100 0001',
+                'department': 'Physical Facilities and Logistics Management Office (PFLMO)',
+                'student_or_employee_id': 'EMP-2022-0001',
+                'phone_number': '+63 919 555 6677',
                 'is_active': True,
                 'is_staff': True,
+                'is_superuser': True,
             }
         )
-        admin_user.set_password('AdminPass123!')
+        admin_user.set_password('Password123!')
         admin_user.save()
 
-        # Basic Users (9 accounts)
+        # Basic Users: Primary demo accounts + fictional student accounts (Part 4 requires >= 8 basic users)
         basic_user_data = [
-            ('juan.delacruz', 'juan@campus.edu', 'Juan', 'Dela Cruz', 'College of Engineering', 'STU-2023-0101', '+63 918 111 2221'),
-            ('maria.santos', 'maria@campus.edu', 'Maria', 'Santos', 'College of Computer Studies', 'STU-2023-0202', '+63 918 111 2222'),
-            ('clara.reyes', 'clara@campus.edu', 'Clara', 'Reyes', 'School of Business & Economics', 'STU-2022-0303', '+63 918 111 2223'),
-            ('pedro.penduko', 'pedro@campus.edu', 'Pedro', 'Penduko', 'College of Arts & Letters', 'STU-2024-0404', '+63 918 111 2224'),
-            ('ana.silva', 'ana@campus.edu', 'Ana', 'Silva', 'University Debate Society', 'ORG-2024-0505', '+63 918 111 2225'),
-            ('mark.bautista', 'mark@campus.edu', 'Mark', 'Bautista', 'Robotics and AI Club', 'ORG-2023-0606', '+63 918 111 2226'),
-            ('elena.torres', 'elena@campus.edu', 'Elena', 'Torres', 'Faculty of Architecture', 'FAC-2021-0707', '+63 918 111 2227'),
-            ('gabriel.cruz', 'gabriel@campus.edu', 'Gabriel', 'Cruz', 'Department of Mathematics', 'FAC-2020-0808', '+63 918 111 2228'),
-            ('sarah.mendoza', 'sarah@campus.edu', 'Sarah', 'Mendoza', 'Student Council Government', 'ORG-2024-0909', '+63 918 111 2229'),
+            ('glenardmayor', 'glenardmayor@gmail.com', 'Glenard', 'Mayor', 'College of Information and Communications Technology (CICT)', '2024-101001', '+63 917 111 2233'),
+            ('steevenrural', 'steevenrural@gmail.com', 'Steeven', 'Rural', 'College of Engineering (COE)', '2024-102002', '+63 918 333 4455'),
+            ('juan.delacruz', 'juan.delacruz@bulsu.edu.ph', 'Juan', 'Dela Cruz', 'College of Engineering (COE)', '2024-100001', '+63 917 111 2201'),
+            ('maria.santos', 'maria.santos@bulsu.edu.ph', 'Maria', 'Santos', 'College of Information and Communications Technology (CICT)', '2024-100002', '+63 917 111 2202'),
+            ('clara.reyes', 'clara.reyes@bulsu.edu.ph', 'Clara', 'Reyes', 'College of Industrial Technology (CIT)', '2024-100003', '+63 917 111 2203'),
+            ('pedro.penduko', 'pedro.penduko@bulsu.edu.ph', 'Pedro', 'Penduko', 'College of Education (COED)', '2024-100004', '+63 917 111 2204'),
+            ('ana.silva', 'ana.silva@bulsu.edu.ph', 'Ana', 'Silva', 'College of Science (CS)', '2024-100005', '+63 917 111 2205'),
+            ('mark.bautista', 'mark.bautista@bulsu.edu.ph', 'Mark', 'Bautista', 'College of Architecture and Fine Arts (CAFA)', '2024-100006', '+63 917 111 2206'),
+            ('elena.torres', 'elena.torres@bulsu.edu.ph', 'Elena', 'Torres', 'College of Arts and Letters (CAL)', '2024-100007', '+63 917 111 2207'),
+            ('gabriel.cruz', 'gabriel.cruz@bulsu.edu.ph', 'Gabriel', 'Cruz', 'College of Business Administration (CBA)', '2024-100008', '+63 917 111 2208'),
+            ('sarah.mendoza', 'sarah.mendoza@bulsu.edu.ph', 'Sarah', 'Mendoza', 'College of Nursing (CON)', '2024-100009', '+63 917 111 2209'),
         ]
 
         users = {}
@@ -72,11 +75,15 @@ class Command(BaseCommand):
                     'student_or_employee_id': sid,
                     'phone_number': phone,
                     'is_active': True,
+                    'is_staff': False,
+                    'is_superuser': False,
                 }
             )
-            u.set_password('UserPass123!')
+            u.set_password('Password123!')
             u.save()
             users[username] = u
+
+        users['admin'] = admin_user
 
         # 3. Facility Categories (4 categories)
         cat_data = [
@@ -112,32 +119,51 @@ class Command(BaseCommand):
             )
             amenities[aname] = am
 
-        # 5. Facilities (7 facilities)
+        # 5. Facilities (10 authentic BulSU facilities)
         facility_data = [
-            ('AUD-101', 'University Main Auditorium', 'Auditoriums & Theaters', 'Building A, 1st Floor', 350,
-             'Premier flagship campus venue for university-wide convocations and general assemblies.',
-             datetime.time(8, 0), datetime.time(21, 0)),
-            ('AUD-201', 'Little Theater Hall', 'Auditoriums & Theaters', 'Building A, 2nd Floor', 120,
-             'Acoustically treated amphitheater ideal for cultural presentations and film screenings.',
-             datetime.time(8, 0), datetime.time(20, 0)),
-            ('LAB-301', 'Advanced Computing Laboratory', 'Laboratories & Technical Rooms', 'Science & Tech Complex, 3rd Floor', 45,
-             'High-spec computer workstations running machine learning, CAD, and coding tools.',
-             datetime.time(7, 30), datetime.time(19, 30)),
-            ('LAB-302', 'Data Science & AI Lab', 'Laboratories & Technical Rooms', 'Science & Tech Complex, 3rd Floor', 40,
-             'Research computing lab equipped with dual monitors and GPU clusters.',
-             datetime.time(8, 0), datetime.time(20, 0)),
-            ('CONF-105', 'Executive Boardroom', 'Conference & Meeting Rooms', 'Administration Building, 2nd Floor', 25,
-             'Formal board meeting space with telepresence equipment and climate control.',
-             datetime.time(8, 0), datetime.time(18, 0)),
-            ('CONF-204', 'Student Council Council Chamber', 'Conference & Meeting Rooms', 'Student Pavilion, 2nd Floor', 30,
-             'Collaborative meeting chamber designed for committee deliberations and workshops.',
-             datetime.time(8, 0), datetime.time(21, 0)),
-            ('HALL-A', 'Grand Campus Activity Hall', 'Multipurpose Halls & Open Spaces', 'Gymnasium Annex, Ground Floor', 200,
-             'Open floor venue suitable for hackathons, career fairs, and large exhibitions.',
-             datetime.time(8, 0), datetime.time(22, 0)),
+            ('VAL-GYM', 'Valencia Hall (University Gymnasium)', 'Multipurpose Halls & Open Spaces', 'BulSU Main Campus - Gate 1 Athletic Grounds', 2500,
+             'Premier indoor sports stadium and university assembly arena for commencements, UAAP/SCUAA athletic meets, major convocations, concerts, and general assemblies.',
+             datetime.time(7, 0), datetime.time(21, 0),
+             '/static/img/facilities/val-gym.jpg'),
+            ('FED-AVR', 'Federizo Hall Audio-Visual Theater', 'Auditoriums & Theaters', 'Federizo Hall - 2nd Floor', 180,
+             'Historic tiered academic theater equipped with acoustic paneling, theatrical lighting, and multimedia projection for collegiate symposiums, cultural presentations, and film screenings.',
+             datetime.time(8, 0), datetime.time(19, 0),
+             '/static/img/facilities/fed-avr.jpg'),
+            ('ELIB-CONF', 'BulSU E-Library Multimedia Conference Center', 'Conference & Meeting Rooms', 'University E-Library Building - 4th Floor', 120,
+             'State-of-the-art multimedia conference hall inside the university premier learning resource center, featuring interactive whiteboards, video teleconferencing, and acoustic zoning for research colloquiums.',
+             datetime.time(8, 0), datetime.time(18, 0),
+             '/static/img/facilities/elib-conf.jpg'),
+            ('CICT-LAB1', 'CICT Advanced Computer & Software Lab 1', 'Laboratories & Technical Rooms', 'College of Information and Communications Technology - 3rd Floor', 50,
+             'High-specification computing laboratory equipped with dual-display development workstations, Gigabit LAN networking, Cisco switching racks, and modern development software suites.',
+             datetime.time(8, 0), datetime.time(18, 0),
+             '/static/img/facilities/cict-lab1.jpg'),
+            ('NAT-AMP', 'Natividad Hall Engineering Amphitheater', 'Auditoriums & Theaters', 'Natividad Hall - College of Engineering 3rd Floor', 220,
+             'Tiered collegiate amphitheater designed for technical engineering symposiums, capstone project exhibits, robotics demonstrations, and inter-collegiate academic competitions.',
+             datetime.time(8, 0), datetime.time(19, 0),
+             '/static/img/facilities/nat-amp.jpg'),
+            ('ALV-HALL', 'Alvarado Hall Multi-Purpose Function Hall', 'Multipurpose Halls & Open Spaces', 'Alvarado Hall - College of Industrial Technology 1st Floor', 300,
+             'Expansive multi-purpose hall accommodating industrial technology expos, vocational trade exhibitions, student seminars, skills demonstrations, and departmental assemblies.',
+             datetime.time(8, 0), datetime.time(20, 0),
+             '/static/img/facilities/alv-hall.jpg'),
+            ('ROX-AVR', 'Roxas Hall Audio-Visual Presentation Hall', 'Auditoriums & Theaters', 'Roxas Hall - College of Education 2nd Floor', 140,
+             'Specialized presentation theater tailored for teacher education demonstrations, demonstration-teaching evaluations, academic workshops, and pedagogical colloquiums.',
+             datetime.time(8, 0), datetime.time(18, 0),
+             '/static/img/facilities/rox-avr.jpg'),
+            ('SAC-HALL', 'Student Activity Center (SAC) Grand Hall', 'Multipurpose Halls & Open Spaces', 'Student Activity Center Building - 2nd Floor', 350,
+             'Central vibrant hub for accredited student organizations, Supreme Student Council (SSC) summits, leadership training, socio-cultural rehearsals, and student welfare activities.',
+             datetime.time(8, 0), datetime.time(20, 0),
+             '/static/img/facilities/sac-hall.jpg'),
+            ('HOST-FUNC', 'BulSU University Hostel Grand Ballroom', 'Conference & Meeting Rooms', 'BulSU University Hostel & Training Center - 2nd Floor', 160,
+             'Elegant banquet and conference ballroom managed under hospitality training standards, ideal for institutional banquets, dignitary receptions, accreditation dinners, and executive conferences.',
+             datetime.time(8, 0), datetime.time(22, 0),
+             '/static/img/facilities/host-func.jpg'),
+            ('FLR-CONF', 'Flores Hall Executive Boardroom', 'Conference & Meeting Rooms', 'Flores Hall (Administration Building) - 4th Floor Executive Wing', 40,
+             'Premier executive council chamber featuring ergonomic leather seating, integrated table-top microphone arrays, dual telepresence monitors, and secure board-meeting accommodations.',
+             datetime.time(8, 0), datetime.time(18, 0),
+             '/static/img/facilities/flr-conf.jpg'),
         ]
         facilities = {}
-        for fcode, fname, fcat, floc, fcap, fdesc, open_t, close_t in facility_data:
+        for fcode, fname, fcat, floc, fcap, fdesc, open_t, close_t, img_url in facility_data:
             fac, _ = Facility.objects.update_or_create(
                 code=fcode,
                 defaults={
@@ -148,20 +174,33 @@ class Command(BaseCommand):
                     'description': fdesc,
                     'default_open_time': open_t,
                     'default_close_time': close_t,
+                    'custom_image_url': img_url,
                     'is_active': True,
                 }
             )
             facilities[fcode] = fac
 
+        # Backward compatibility aliases for historical seed fixtures
+        facilities['AUD-101'] = facilities['VAL-GYM']
+        facilities['AUD-201'] = facilities['FED-AVR']
+        facilities['LAB-301'] = facilities['CICT-LAB1']
+        facilities['LAB-302'] = facilities['NAT-AMP']
+        facilities['CONF-105'] = facilities['FLR-CONF']
+        facilities['CONF-204'] = facilities['ELIB-CONF']
+        facilities['HALL-A'] = facilities['ALV-HALL']
+
         # Assign amenities to facilities
         associations = [
-            ('AUD-101', ['HD Laser Projector', 'Wireless Microphones', 'Surround Audio PA System', 'Podium & Lectern']),
-            ('AUD-201', ['HD Laser Projector', 'Wireless Microphones', 'Surround Audio PA System']),
-            ('LAB-301', ['High-Speed Dedicated Wi-Fi', 'Interactive Smart Board', 'Modular Workstations']),
-            ('LAB-302', ['High-Speed Dedicated Wi-Fi', 'Interactive Smart Board', 'HD Laser Projector']),
-            ('CONF-105', ['Video Conferencing Suite', 'HD Laser Projector', 'High-Speed Dedicated Wi-Fi']),
-            ('CONF-204', ['Video Conferencing Suite', 'Interactive Smart Board']),
-            ('HALL-A', ['Wireless Microphones', 'Surround Audio PA System', 'Modular Workstations', 'High-Speed Dedicated Wi-Fi']),
+            ('VAL-GYM', ['Surround Audio PA System', 'Wireless Microphones', 'High-Speed Dedicated Wi-Fi', 'Podium & Lectern']),
+            ('FED-AVR', ['HD Laser Projector', 'Surround Audio PA System', 'Wireless Microphones', 'Podium & Lectern']),
+            ('ELIB-CONF', ['Video Conferencing Suite', 'Interactive Smart Board', 'High-Speed Dedicated Wi-Fi', 'HD Laser Projector']),
+            ('CICT-LAB1', ['Modular Workstations', 'High-Speed Dedicated Wi-Fi', 'Interactive Smart Board', 'HD Laser Projector']),
+            ('NAT-AMP', ['HD Laser Projector', 'Wireless Microphones', 'Interactive Smart Board', 'Podium & Lectern']),
+            ('ALV-HALL', ['HD Laser Projector', 'Wireless Microphones', 'Surround Audio PA System', 'Modular Workstations']),
+            ('ROX-AVR', ['HD Laser Projector', 'Wireless Microphones', 'Surround Audio PA System', 'Podium & Lectern']),
+            ('SAC-HALL', ['Surround Audio PA System', 'Wireless Microphones', 'High-Speed Dedicated Wi-Fi', 'Modular Workstations']),
+            ('HOST-FUNC', ['HD Laser Projector', 'Video Conferencing Suite', 'Wireless Microphones', 'Surround Audio PA System']),
+            ('FLR-CONF', ['Video Conferencing Suite', 'Interactive Smart Board', 'High-Speed Dedicated Wi-Fi', 'Podium & Lectern']),
         ]
         for fcode, am_list in associations:
             fac = facilities[fcode]
@@ -173,23 +212,19 @@ class Command(BaseCommand):
                     defaults={'quantity': 2, 'notes': 'Installed in primary setup'}
                 )
 
-        # 6. Operating Hours per weekday for AUD-101 and LAB-301
-        for day in range(5): # Mon-Fri
+        # 6. Operating Hours per weekday for all facilities
+        for fac in facilities.values():
+            for day in range(6): # Mon-Sat
+                FacilityOperatingHour.objects.update_or_create(
+                    facility=fac,
+                    day_of_week=day,
+                    defaults={'open_time': fac.default_open_time, 'close_time': fac.default_close_time, 'is_closed': False}
+                )
             FacilityOperatingHour.objects.update_or_create(
-                facility=facilities['AUD-101'],
-                day_of_week=day,
-                defaults={'open_time': datetime.time(8, 0), 'close_time': datetime.time(21, 0), 'is_closed': False}
+                facility=fac,
+                day_of_week=6, # Sunday closed
+                defaults={'open_time': fac.default_open_time, 'close_time': fac.default_close_time, 'is_closed': True}
             )
-        FacilityOperatingHour.objects.update_or_create(
-            facility=facilities['AUD-101'],
-            day_of_week=5, # Saturday
-            defaults={'open_time': datetime.time(8, 0), 'close_time': datetime.time(18, 0), 'is_closed': False}
-        )
-        FacilityOperatingHour.objects.update_or_create(
-            facility=facilities['AUD-101'],
-            day_of_week=6, # Sunday closed
-            defaults={'open_time': datetime.time(8, 0), 'close_time': datetime.time(18, 0), 'is_closed': True}
-        )
 
         # 7. Closure Blocks (5 closure blocks)
         base_now = timezone.now()
@@ -428,6 +463,7 @@ class Command(BaseCommand):
 
         # More Approved Upcoming Bookings
         more_approved = [
+            ('glenardmayor', 'VAL-GYM', 'CICT Collegiate Assembly & Tech Summit', 'Annual gathering of CICT students and computing faculty', 350, 3, 13, 17),
             ('clara.reyes', 'HALL-A', 'Annual Campus Startup Expo', 'Exhibition of student business ventures', 150, 4, 10, 14),
             ('mark.bautista', 'LAB-301', 'Autonomous Drone Programming Bootcamp', 'Coding flight paths in simulation', 35, 6, 13, 16),
             ('ana.silva', 'CONF-105', 'University Model UN Delegate Training', 'Training for international simulation', 20, 7, 9, 12),
@@ -455,8 +491,9 @@ class Command(BaseCommand):
             )
             EventRecord.objects.get_or_create(reservation=r_app)
 
-        # Pending Requests Awaiting Admin Review (5 requests)
+        # Pending Requests Awaiting Admin Review (6 requests)
         pending_requests = [
+            ('steevenrural', 'NAT-AMP', 'COE Engineering Robotics Colloquium', 'Presentation of robotic designs and capstone projects', 120, 4, 9, 13),
             ('sarah.mendoza', 'AUD-101', 'Student Council General Townhall', 'Open forum on campus welfare and student rights', 250, 5, 14, 17),
             ('pedro.penduko', 'AUD-201', 'Campus Acoustic Songwriting Night', 'Student musical performances and acoustic sets', 90, 6, 17, 20),
             ('gabriel.cruz', 'LAB-302', 'Python Data Visualization Workshop', 'Faculty-led student training on Pandas and Matplotlib', 38, 7, 10, 13),

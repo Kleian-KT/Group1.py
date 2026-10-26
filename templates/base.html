@@ -101,7 +101,129 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Custom Application CSS (BulSU Theme & Design System) -->
-    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}?v=3.2">
+
+    <!-- Strict Global Cursor & Typing Indicator Prevention Engine -->
+    <style id="system-cursor-lock">
+        /* 1. Global Reset: Arrow pointer and non-selectable by default */
+        *, *::before, *::after {
+            cursor: default !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+        }
+
+        /* 2. Interactive & Clickable Controls: Pointer Cursor */
+        a, a *,
+        button:not(:disabled), button:not(:disabled) *,
+        [role="button"]:not([aria-disabled="true"]), [role="button"]:not([aria-disabled="true"]) *,
+        .btn:not(.disabled):not(:disabled), .btn:not(.disabled):not(:disabled) *,
+        input[type="button"]:not(:disabled),
+        input[type="submit"]:not(:disabled),
+        input[type="reset"]:not(:disabled),
+        input[type="checkbox"]:not(:disabled),
+        input[type="radio"]:not(:disabled),
+        input[type="file"]:not(:disabled),
+        input[type="color"]:not(:disabled),
+        input[type="range"]:not(:disabled),
+        select:not(:disabled), select:not(:disabled) *,
+        option,
+        summary, summary *,
+        label.form-check-label, label.form-check-label *,
+        .form-check label, .form-check label *,
+        .form-check-input:not(:disabled),
+        label:has(input[type="checkbox"]:not(:disabled)), label:has(input[type="checkbox"]:not(:disabled)) *,
+        label:has(input[type="radio"]:not(:disabled)), label:has(input[type="radio"]:not(:disabled)) *,
+        label.btn:not(.disabled), label.btn:not(.disabled) *,
+        .nav-link:not(.disabled), .nav-link:not(.disabled) *,
+        .dropdown-item:not(.disabled), .dropdown-item:not(.disabled) *,
+        .dropdown-toggle:not(.disabled), .dropdown-toggle:not(.disabled) *,
+        .page-link:not(.disabled), .page-link:not(.disabled) *,
+        .btn-close, .btn-close *,
+        [data-bs-toggle]:not(:disabled), [data-bs-toggle]:not(:disabled) *,
+        [data-bs-dismiss], [data-bs-dismiss] *,
+        [data-confirm], [data-confirm] *,
+        [onclick], [onclick] *,
+        .sidebar-item, .sidebar-item *,
+        .clickable, .clickable *,
+        .cursor-pointer, .cursor-pointer * {
+            cursor: pointer !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
+
+        /* Native input clickable controls */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator,
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+        input[type="month"]::-webkit-calendar-picker-indicator,
+        input[type="week"]::-webkit-calendar-picker-indicator,
+        input[type="search"]::-webkit-search-cancel-button {
+            cursor: pointer !important;
+        }
+
+        /* 3. STRICTLY TYPABLE / EDITABLE TEXT INPUTS ONLY */
+        /* Only these elements can display the typing indicator (caret) and text cursor */
+        input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="image"]):not([type="hidden"]):not([readonly]):not([disabled]),
+        input[type="text"]:not([readonly]):not([disabled]),
+        input[type="password"]:not([readonly]):not([disabled]),
+        input[type="email"]:not([readonly]):not([disabled]),
+        input[type="number"]:not([readonly]):not([disabled]),
+        input[type="search"]:not([readonly]):not([disabled]),
+        input[type="tel"]:not([readonly]):not([disabled]),
+        input[type="url"]:not([readonly]):not([disabled]),
+        input[type="date"]:not([readonly]):not([disabled]),
+        input[type="datetime-local"]:not([readonly]):not([disabled]),
+        input[type="time"]:not([readonly]):not([disabled]),
+        input[type="month"]:not([readonly]):not([disabled]),
+        input[type="week"]:not([readonly]):not([disabled]),
+        textarea:not([readonly]):not([disabled]),
+        [contenteditable="true"], [contenteditable="true"] *,
+        [contenteditable=""], [contenteditable=""] *,
+        .cursor-text {
+            cursor: text !important;
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+        }
+
+        /* 4. READ-ONLY INPUTS: No text cursor, no typing indicator */
+        input[readonly]:not([disabled]),
+        textarea[readonly]:not([disabled]),
+        input[readonly="readonly"]:not([disabled]),
+        textarea[readonly="readonly"]:not([disabled]),
+        .form-control[readonly]:not([disabled]) {
+            cursor: default !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
+
+        /* 5. DISABLED / INACTIVE ELEMENTS */
+        :disabled, :disabled *,
+        [disabled], [disabled] *,
+        .disabled, .disabled *,
+        [aria-disabled="true"], [aria-disabled="true"] *,
+        .cursor-not-allowed, .cursor-not-allowed * {
+            cursor: not-allowed !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
+
+        /* 6. Utility overrides */
+        .cursor-default, .cursor-default * {
+            cursor: default !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
+        .selectable, .selectable *,
+        .allow-select, .allow-select * {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            cursor: default !important;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-slate font-inter">
@@ -244,6 +366,18 @@
                 pendingActionCallback();
             }
         });
+        // Strict guard against typing indicator (caret) appearing in display text
+        document.addEventListener('mousedown', function (e) {
+            const isEditable = e.target.closest('input:not([readonly]):not([disabled]), textarea:not([readonly]):not([disabled]), [contenteditable="true"], [contenteditable=""]');
+            if (!isEditable) {
+                if (window.getSelection) {
+                    const sel = window.getSelection();
+                    if (sel && sel.removeAllRanges) {
+                        setTimeout(() => sel.removeAllRanges(), 0);
+                    }
+                }
+            }
+        }, true);
     });
     </script>
     {% block extra_js %}{% endblock %}

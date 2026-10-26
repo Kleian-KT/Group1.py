@@ -43,7 +43,7 @@
                 </div>
                 <div class="flex items-center justify-between py-1.5">
                     <span class="text-slate-500 font-medium">Standard Hours</span>
-                    <span class="font-bold text-slate-900 font-mono">{{ facility.default_open_time|time:"H:i" }} &ndash; {{ facility.default_close_time|time:"H:i" }}</span>
+                    <span class="font-bold text-slate-900 font-mono">{{ facility.default_open_time|time:"g:i A" }} &ndash; {{ facility.default_close_time|time:"g:i A" }}</span>
                 </div>
 
                 {% if facility.description %}
@@ -119,9 +119,9 @@
                                 Facility is closed on this weekday.
                             </span>
                         {% else %}
-                            <span class="text-xs text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                            <span class="text-xs text-slate-600 font-medium flex items-center gap-1 mt-0.5">
                                 <span class="material-symbols-outlined text-[15px] text-amber-500">schedule</span>
-                                Operating Hours: {{ availability.open_time|time:"H:i" }} &ndash; {{ availability.close_time|time:"H:i" }}
+                                Operating Hours: <strong class="font-mono text-slate-800 font-semibold">{% if availability.open_time_display and availability.close_time_display %}{{ availability.open_time_display }} &ndash; {{ availability.close_time_display }}{% else %}{{ facility.default_open_time|time:"g:i A" }} &ndash; {{ facility.default_close_time|time:"g:i A" }}{% endif %}</strong>
                             </span>
                         {% endif %}
                     </div>
@@ -132,7 +132,7 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Available
                         </span>
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 border border-slate-200 font-medium text-[11px]">
-                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Booked / Closed
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Unavailable
                         </span>
                     </div>
                 </div>
@@ -147,29 +147,40 @@
                     </div>
                 {% else %}
                     <p class="text-xs text-slate-500 mb-4">
-                        Hourly intervals reflect confirmed reservations and official maintenance closures.
+                        Hourly intervals reflect real-time vacancy and privacy-protected conflict holds.
                     </p>
 
                     <!-- Slots Matrix -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                         {% for slot in availability.slots %}
-                            <div class="p-3.5 rounded-xl border text-center transition-all {% if slot.is_available %}bg-emerald-50/60 border-emerald-200 text-emerald-900 hover:bg-emerald-50{% else %}bg-slate-50 border-slate-200 text-slate-500 opacity-90{% endif %}">
+                            <div class="p-3.5 rounded-xl border text-center transition-all {% if slot.is_available %}bg-white border-emerald-200 text-slate-800 hover:border-emerald-400 hover:shadow-2xs{% else %}bg-slate-50/80 border-slate-200 text-slate-500 opacity-80{% endif %}">
                                 <div class="font-mono text-xs font-bold tracking-tight">
-                                    {{ slot.start_time|time:"H:i" }} &ndash; {{ slot.end_time|time:"H:i" }}
+                                    {% if slot.start_display and slot.end_display %}
+                                        {{ slot.start_display }} &ndash; {{ slot.end_display }}
+                                    {% else %}
+                                        {{ slot.start_time }} &ndash; {{ slot.end_time }}
+                                    {% endif %}
                                 </div>
-                                <div class="mt-1.5">
+                                <div class="mt-2 flex items-center justify-center">
                                     {% if slot.is_available %}
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
-                                            <span class="material-symbols-outlined text-[14px]">check_circle</span>
-                                            Available
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                            <span>Available</span>
                                         </span>
                                     {% else %}
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-                                            <span class="material-symbols-outlined text-[14px]">lock</span>
-                                            {{ slot.reason }}
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-600">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                            <span>Unavailable</span>
                                         </span>
                                     {% endif %}
                                 </div>
+                                {% if slot.is_available %}
+                                    <a href="{% url 'user_reservation_create' %}?facility={{ facility.id }}&date={{ selected_date|date:'Y-m-d' }}&start={{ slot.start_time }}&end={{ slot.end_time }}" 
+                                       class="mt-2.5 inline-flex items-center justify-center gap-1 w-full py-1.5 rounded-lg bg-[#4a0808] hover:bg-[#6b1414] text-white text-[11px] font-semibold transition-colors shadow-2xs">
+                                        <span>Select Slot</span>
+                                        <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                                    </a>
+                                {% endif %}
                             </div>
                         {% endfor %}
                     </div>

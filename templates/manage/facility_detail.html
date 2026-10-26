@@ -123,32 +123,59 @@
             {% endif %}
 
             <!-- Configure Day Schedule Form -->
-            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <h4 class="text-xs font-bold text-slate-900 mb-3">Configure Day Operating Hours</h4>
-                <form method="post" action="{% url 'admin_facility_set_hours' facility_id=facility.id %}" class="space-y-3">
+            <div class="p-5 bg-slate-50/80 rounded-xl border border-slate-200">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Configure Day Operating Hours</h4>
+                    <div class="flex items-center gap-1.5 text-[11px] text-slate-500">
+                        <span class="font-medium text-slate-400">Presets:</span>
+                        <button type="button" onclick="setHours('08:00', '17:00')" class="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs font-mono text-[10px]">8am–5pm</button>
+                        <button type="button" onclick="setHours('08:00', '20:00')" class="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs font-mono text-[10px]">8am–8pm</button>
+                        <button type="button" onclick="setHours('08:00', '12:00')" class="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs font-mono text-[10px]">Half Day</button>
+                    </div>
+                </div>
+
+                {% if hour_form.errors %}
+                    <div class="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs mb-3">
+                        <ul class="list-disc list-inside space-y-0.5">
+                            {% for field in hour_form %}
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in hour_form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'admin_facility_save_operating_hour' facility_id=facility.id %}" class="space-y-3" id="operating-hour-form">
                     {% csrf_token %}
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div class="sm:col-span-3">
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Day of Week</label>
-                            {{ hours_form.day_of_week }}
+                    <div class="space-y-1">
+                        <label class="block text-[11px] font-semibold text-slate-600">Day of Week <span class="text-rose-500">*</span></label>
+                        {{ hour_form.day_of_week }}
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                        <div class="sm:col-span-5 space-y-1" id="open-time-wrap">
+                            <label class="block text-[11px] font-semibold text-slate-600">Open Time</label>
+                            {{ hour_form.open_time }}
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Open Time</label>
-                            {{ hours_form.open_time }}
+                        <div class="sm:col-span-5 space-y-1" id="close-time-wrap">
+                            <label class="block text-[11px] font-semibold text-slate-600">Close Time</label>
+                            {{ hour_form.close_time }}
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Close Time</label>
-                            {{ hours_form.close_time }}
-                        </div>
-                        <div class="flex items-center pt-5">
-                            <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-700 select-none">
-                                {{ hours_form.is_closed }}
-                                <span class="text-[11px] font-semibold">Closed</span>
+                        <div class="sm:col-span-2 space-y-1">
+                            <label class="flex items-center justify-center gap-1.5 h-[38px] px-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer shadow-2xs text-xs font-semibold text-slate-700 transition-colors select-none">
+                                {{ hour_form.is_closed }}
+                                <span class="text-[11px]">Closed</span>
                             </label>
                         </div>
                     </div>
-                    <button type="submit" class="w-full py-2 px-3 rounded-lg bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors mt-2">
-                        Save Operating Hours
+
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#6b1414] hover:bg-[#4a0808] text-white text-xs font-semibold shadow-sm transition-colors mt-1">
+                        <span class="material-symbols-outlined text-[16px]">save</span>
+                        <span>Save Day Operating Hours</span>
                     </button>
                 </form>
             </div>
@@ -189,7 +216,7 @@
                                     <td class="py-3 px-3 text-slate-500">{{ a.notes|default:"-" }}</td>
                                     <td class="py-3 px-3 text-right">
                                         <form method="post" action="{% url 'admin_facility_remove_amenity' facility_id=facility.id amenity_id=a.id %}" class="inline">
-                                            {% csrf_token %}
+                                             {% csrf_token %}
                                             <button type="submit" 
                                                     class="p-1 rounded text-rose-600 hover:bg-rose-50 transition-colors" 
                                                     title="Remove amenity"
@@ -211,28 +238,54 @@
             {% endif %}
 
             <!-- Assign Amenity Form -->
-            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <h4 class="text-xs font-bold text-slate-900 mb-3">Assign Amenity to Facility</h4>
+            <div class="p-5 bg-slate-50/80 rounded-xl border border-slate-200">
+                <h4 class="text-xs font-bold text-slate-900 mb-3 uppercase tracking-wider">Assign Amenity to Facility</h4>
+                {% if amenity_form.errors %}
+                    <div class="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs mb-3">
+                        <ul class="list-disc list-inside space-y-0.5">
+                            {% for field in amenity_form %}
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in amenity_form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
                 <form method="post" action="{% url 'admin_facility_add_amenity' facility_id=facility.id %}" class="space-y-3">
                     {% csrf_token %}
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Amenity Item</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                        <!-- Amenity Dropdown -->
+                        <div class="sm:col-span-5 space-y-1">
+                            <label class="block text-[11px] font-semibold text-slate-600">Amenity Item <span class="text-rose-500">*</span></label>
                             {{ amenity_form.amenity }}
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Quantity</label>
-                            {{ amenity_form.quantity }}
+
+                        <!-- Quantity Stepper -->
+                        <div class="sm:col-span-3 space-y-1">
+                            <label class="block text-[11px] font-semibold text-slate-600">Quantity <span class="text-rose-500">*</span></label>
+                            <div class="flex items-center rounded-lg border border-slate-300 bg-white overflow-hidden shadow-2xs h-[38px]">
+                                <button type="button" onclick="stepAmenity(-1)" class="w-9 h-full flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold border-r border-slate-200 transition-colors select-none text-base cursor-pointer">−</button>
+                                {{ amenity_form.quantity }}
+                                <button type="button" onclick="stepAmenity(1)" class="w-9 h-full flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold border-l border-slate-200 transition-colors select-none text-base cursor-pointer">+</button>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Notes</label>
+
+                        <!-- Notes -->
+                        <div class="sm:col-span-4 space-y-1">
+                            <label class="block text-[11px] font-semibold text-slate-600">Notes &amp; Location</label>
                             {{ amenity_form.notes }}
                         </div>
                     </div>
-                    <button type="submit" class="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors">
-                        <span class="material-symbols-outlined text-[15px]">add_circle</span>
-                        <span>Assign Amenity</span>
-                    </button>
+
+                    <div class="pt-1">
+                        <button type="submit" class="inline-flex items-center gap-1.5 py-2 px-4 rounded-lg bg-[#6b1414] hover:bg-[#4a0808] text-white text-xs font-semibold shadow-sm transition-colors">
+                            <span class="material-symbols-outlined text-[15px]">add_circle</span>
+                            <span>Assign Amenity</span>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -303,4 +356,99 @@
         </div>
     </div>
 </div>
+
+<!-- Embedded Operating Hours Schedule Data for Client-Side Interactivity -->
+<script id="operating-hours-data" type="application/json">
+{
+    {% for oh in operating_hours %}
+        "{{ oh.day_of_week }}": {
+            "open": "{{ oh.open_time|time:'H:i' }}",
+            "close": "{{ oh.close_time|time:'H:i' }}",
+            "is_closed": {{ oh.is_closed|yesno:"true,false" }}
+        }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+}
+</script>
+
+<script>
+(function() {
+    const dataEl = document.getElementById('operating-hours-data');
+    let operatingHoursData = {};
+    try {
+        operatingHoursData = JSON.parse(dataEl ? dataEl.textContent : '{}');
+    } catch(e) {}
+
+    const defaultOpenTime = "{{ facility.default_open_time|time:'H:i' }}";
+    const defaultCloseTime = "{{ facility.default_close_time|time:'H:i' }}";
+
+    function updateClosedState() {
+        const closedBox = document.getElementById('id_is_closed');
+        const openWrap = document.getElementById('open-time-wrap');
+        const closeWrap = document.getElementById('close-time-wrap');
+        if (!closedBox) return;
+
+        if (closedBox.checked) {
+            if (openWrap) openWrap.classList.add('opacity-40', 'pointer-events-none');
+            if (closeWrap) closeWrap.classList.add('opacity-40', 'pointer-events-none');
+        } else {
+            if (openWrap) openWrap.classList.remove('opacity-40', 'pointer-events-none');
+            if (closeWrap) closeWrap.classList.remove('opacity-40', 'pointer-events-none');
+        }
+    }
+
+    function loadDayHours(dayIndex) {
+        const openInput = document.getElementById('id_open_time');
+        const closeInput = document.getElementById('id_close_time');
+        const closedBox = document.getElementById('id_is_closed');
+        const dayData = operatingHoursData[String(dayIndex)];
+
+        if (dayData) {
+            if (openInput) openInput.value = dayData.open || defaultOpenTime;
+            if (closeInput) closeInput.value = dayData.close || defaultCloseTime;
+            if (closedBox) closedBox.checked = Boolean(dayData.is_closed);
+        } else {
+            if (openInput) openInput.value = defaultOpenTime;
+            if (closeInput) closeInput.value = defaultCloseTime;
+            if (closedBox) closedBox.checked = false;
+        }
+        updateClosedState();
+    }
+
+    window.setHours = function(open, close) {
+        const openInput = document.getElementById('id_open_time');
+        const closeInput = document.getElementById('id_close_time');
+        const closedBox = document.getElementById('id_is_closed');
+        if (openInput) openInput.value = open;
+        if (closeInput) closeInput.value = close;
+        if (closedBox) closedBox.checked = false;
+        updateClosedState();
+    };
+
+    window.stepAmenity = function(delta) {
+        const qtyInput = document.getElementById('id_quantity');
+        if (!qtyInput) return;
+        let val = parseInt(qtyInput.value, 10) || 1;
+        qtyInput.value = Math.max(1, Math.min(1000, val + delta));
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const daySelect = document.getElementById('id_day_of_week');
+        if (daySelect) {
+            daySelect.addEventListener('change', function() {
+                loadDayHours(parseInt(this.value, 10) || 0);
+            });
+            // Initial load for currently selected day
+            if (daySelect.value !== '') {
+                loadDayHours(parseInt(daySelect.value, 10) || 0);
+            }
+        }
+
+        const closedBox = document.getElementById('id_is_closed');
+        if (closedBox) {
+            closedBox.addEventListener('change', updateClosedState);
+            updateClosedState();
+        }
+    });
+})();
+</script>
 {% endblock %}

@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block portal_content %}
-<div class="max-w-4xl mx-auto space-y-6 mb-8">
+<div class="max-w-4xl mx-auto space-y-6 mb-8 select-none">
     <!-- Guidelines & Restrictions Banner -->
     <div class="p-5 rounded-xl bg-amber-50/80 border border-amber-200/80 shadow-2xs">
         <div class="flex items-start gap-3">
@@ -23,13 +23,13 @@
                     <li>Maximum continuous event duration is <strong class="font-semibold">{{ max_duration }} hours</strong>.</li>
                     <li>Bookings must be scheduled within <strong class="font-semibold">{{ max_advance }} calendar days</strong> in advance.</li>
                     <li>All bookings must fall strictly within the facility's daily operating hours. Overnight events are not permitted.</li>
-                    <li>Submissions are initially created in <strong class="font-semibold">Pending</strong> status and undergo review by PFLMO administration.</li>
+                    <li>Submissions are initially placed on <strong class="font-semibold">Pending Hold</strong> and reviewed by PFLMO administration.</li>
                 </ul>
             </div>
         </div>
     </div>
 
-    <!-- Reservation Form Card strictly matching Stitch U3 -->
+    <!-- Reservation Form Card -->
     <div class="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -59,35 +59,169 @@
                 </div>
             {% endif %}
 
-            <form method="post" class="space-y-6">
+            <form method="post" id="reservation-form" class="space-y-6">
                 {% csrf_token %}
+
+                <!-- Hidden inputs for backend form processing -->
+                <div class="hidden">
+                    {{ form.start_time }}
+                    {{ form.end_time }}
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
                     <!-- Facility Selection -->
                     <div class="md:col-span-12 space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">
+                        <label for="id_facility" class="block text-xs font-semibold text-slate-700">
                             Select Campus Facility <span class="text-rose-600">*</span>
                         </label>
                         {{ form.facility }}
                         <span class="block text-[11px] text-slate-500">Pick an active campus hall, laboratory, or boardroom.</span>
                     </div>
 
+                    <!-- Dynamic Facility Preview Card -->
+                    <div id="facility-preview-card" class="md:col-span-12 hidden">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <img id="facility-preview-img" src="" alt="Facility" class="w-20 h-16 sm:w-24 sm:h-20 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0">
+                            <div class="flex-1 min-w-0 space-y-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h4 id="facility-preview-name" class="text-sm font-bold text-slate-900 truncate"></h4>
+                                    <span id="facility-preview-badge" class="px-2 py-0.5 rounded text-[10px] font-bold"></span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-600">
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[15px] text-slate-400">pin_drop</span>
+                                        <span id="facility-preview-location"></span>
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[15px] text-slate-400">group</span>
+                                        <span>Max <strong id="facility-preview-capacity" class="font-semibold text-slate-800"></strong> Attendees</span>
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[15px] text-slate-400">schedule</span>
+                                        <span>Hours: <strong id="facility-preview-hours" class="font-semibold text-slate-800"></strong></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION: Modern Interactive Schedule Picker -->
+                    <div class="md:col-span-12 space-y-4 pt-2 border-t border-slate-100">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                                    Schedule & Real-time Availability <span class="text-rose-600">*</span>
+                                </label>
+                                <p class="text-[11px] text-slate-500">Select an event date to view live slot availability. Non-available times are automatically blocked.</p>
+                            </div>
+                            <!-- Legend -->
+                            <div class="flex items-center gap-3 text-[11px]">
+                                <span class="flex items-center gap-1 text-emerald-700 font-semibold">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Available
+                                </span>
+                                <span class="flex items-center gap-1 text-slate-500 font-semibold">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Unavailable
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Date Selection with Quick Shortcuts -->
+                        <div class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-3">
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <div class="w-full md:w-56 shrink-0">
+                                    <label for="picker-date" class="block text-[11px] font-semibold text-slate-600 mb-1">
+                                        Event Date
+                                    </label>
+                                    <input type="date" id="picker-date" class="form-control text-xs font-semibold py-1.5 px-3 bg-white" min="{{ today_str }}" max="{{ max_date_str }}" value="{{ default_date }}">
+                                </div>
+                                <div class="flex-1">
+                                    <span class="block text-[11px] font-semibold text-slate-600 mb-1">Quick Date Shortcuts</span>
+                                    <div class="flex flex-wrap items-center gap-1.5" id="date-shortcuts">
+                                        <button type="button" data-days="0" class="date-shortcut-btn px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition-colors">Today</button>
+                                        <button type="button" data-days="1" class="date-shortcut-btn px-2.5 py-1 rounded-md text-[11px] font-semibold border border-[#4a0808]/30 bg-[#4a0808]/10 text-[#4a0808] hover:bg-[#4a0808]/20 transition-colors">Tomorrow</button>
+                                        <button type="button" data-days="2" class="date-shortcut-btn px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition-colors">+2 Days</button>
+                                        <button type="button" data-days="3" class="date-shortcut-btn px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition-colors">+3 Days</button>
+                                        <button type="button" data-days="7" class="date-shortcut-btn px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition-colors">Next Week</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Hourly Availability Slots Matrix -->
+                            <div class="space-y-2 pt-2 border-t border-slate-200/60">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                        Hourly Slot Overview (<span id="slots-count-label">Loading...</span>)
+                                    </span>
+                                    <span id="slots-day-title" class="text-[11px] font-semibold text-slate-500"></span>
+                                </div>
+
+                                <div id="slots-matrix-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                    <!-- Dynamic slots populated via JS -->
+                                    <div class="col-span-full py-8 text-center text-xs text-slate-500">
+                                        <span class="material-symbols-outlined text-[24px] text-slate-400 block mb-1 animate-spin">progress_activity</span>
+                                        Loading venue schedule...
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Time Range Selection Dropdowns -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200/60">
+                                <div>
+                                    <label for="picker-start-time" class="block text-[11px] font-bold text-slate-700 mb-1">
+                                        Start Time <span class="text-rose-600">*</span>
+                                    </label>
+                                    <select id="picker-start-time" class="form-select text-xs font-semibold py-2 px-3 bg-white w-full border border-slate-300 rounded-lg">
+                                        <option value="">-- Choose start time --</option>
+                                    </select>
+                                    <span class="block text-[10px] text-slate-500 mt-1">Filtered strictly to available starting hours.</span>
+                                </div>
+
+                                <div>
+                                    <label for="picker-end-time" class="block text-[11px] font-bold text-slate-700 mb-1">
+                                        End Time <span class="text-rose-600">*</span>
+                                    </label>
+                                    <select id="picker-end-time" class="form-select text-xs font-semibold py-2 px-3 bg-white w-full border border-slate-300 rounded-lg" disabled>
+                                        <option value="">-- Select start time first --</option>
+                                    </select>
+                                    <span class="block text-[10px] text-slate-500 mt-1">Max {{ max_duration }} hours. Stops at any unavailable slot.</span>
+                                </div>
+                            </div>
+
+                            <!-- Selected Schedule Confirmation Card -->
+                            <div id="schedule-confirmation-badge" class="hidden p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+                                    <div class="flex-1 font-medium">
+                                        <span class="font-bold text-emerald-950" id="summary-date-display">Date</span> &bull; 
+                                        <span class="font-bold text-emerald-950" id="summary-time-display">Time</span>
+                                        <span class="text-emerald-700 ml-1">(<span id="summary-duration-display">0</span> continuous hours)</span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded bg-emerald-200/60 text-emerald-800 text-[10px] font-bold uppercase tracking-wider">Verified Available</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Event Title -->
-                    <div class="md:col-span-12 space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">
+                    <div class="md:col-span-12 space-y-1.5 pt-2">
+                        <label for="id_title" class="block text-xs font-semibold text-slate-700">
                             Event Title <span class="text-rose-600">*</span>
                         </label>
                         {{ form.title }}
-                        <span class="block text-[11px] text-slate-500">Official name of the event or gathering.</span>
+                        <span class="block text-[11px] text-slate-500">Official name of the event, seminar, or academic meeting.</span>
                     </div>
 
                     <!-- Expected Attendees -->
                     <div class="md:col-span-6 space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">
+                        <label for="id_participant_count" class="block text-xs font-semibold text-slate-700">
                             Expected Number of Attendees <span class="text-rose-600">*</span>
                         </label>
                         {{ form.participant_count }}
-                        <span class="block text-[11px] text-slate-500">Must not exceed the selected venue's maximum capacity.</span>
+                        <span class="block text-[11px] text-slate-500">Must not exceed venue capacity.</span>
+                        <div id="participant-capacity-warning" class="hidden text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1 p-2 rounded-lg bg-rose-50 border border-rose-200">
+                            <span class="material-symbols-outlined text-[15px] shrink-0 text-rose-600">warning</span>
+                            <span id="participant-capacity-warning-text"></span>
+                        </div>
                     </div>
 
                     <!-- Requested By -->
@@ -97,27 +231,9 @@
                         <span class="block text-[11px] text-slate-400">Authenticated student / faculty account.</span>
                     </div>
 
-                    <!-- Start Datetime -->
-                    <div class="md:col-span-6 space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">
-                            Start Datetime <span class="text-rose-600">*</span>
-                        </label>
-                        {{ form.start_time }}
-                        <span class="block text-[11px] text-slate-500">Date and start time within operating hours.</span>
-                    </div>
-
-                    <!-- End Datetime -->
-                    <div class="md:col-span-6 space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">
-                            End Datetime <span class="text-rose-600">*</span>
-                        </label>
-                        {{ form.end_time }}
-                        <span class="block text-[11px] text-slate-500">Date and conclude time (must be after start).</span>
-                    </div>
-
                     <!-- Event Purpose -->
                     <div class="md:col-span-12 space-y-1.5">
-                        <label class="block text-xs font-semibold text-slate-700">
+                        <label for="id_purpose" class="block text-xs font-semibold text-slate-700">
                             Event Purpose & Activity Outline <span class="text-rose-600">*</span>
                         </label>
                         {{ form.purpose }}
@@ -127,8 +243,8 @@
 
                 <!-- Submission Disclaimer Note -->
                 <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center gap-2.5 text-xs text-slate-600">
-                    <span class="material-symbols-outlined text-[18px] text-[#4a0808] shrink-0">info</span>
-                    <span>Submission places the timeslot on reservation hold pending administrator approval. It does not automatically guarantee clearance.</span>
+                    <span class="material-symbols-outlined text-[18px] text-[#4a0808] shrink-0">lock_clock</span>
+                    <span>Submission immediately places the selected schedule on reservation hold to prevent conflicting requests, pending PFLMO administrator review.</span>
                 </div>
 
                 <!-- Form Action Buttons -->
@@ -136,7 +252,7 @@
                     <a href="{% url 'user_reservation_list' %}" class="px-4 py-2 rounded-lg bg-white border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-colors">
                         Cancel
                     </a>
-                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#4a0808] hover:bg-[#6b1414] text-xs font-semibold text-white shadow-2xs transition-colors">
+                    <button type="submit" id="submit-btn" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#4a0808] hover:bg-[#6b1414] text-xs font-semibold text-white shadow-2xs transition-colors">
                         <span class="material-symbols-outlined text-[17px]">send</span>
                         <span>Submit Reservation Request</span>
                     </button>
@@ -145,4 +261,562 @@
         </div>
     </div>
 </div>
+
+<!-- Interactive Scheduling Engine Client Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const facilitySelect = document.getElementById('id_facility');
+    const dateInput = document.getElementById('picker-date');
+    const startSelect = document.getElementById('picker-start-time');
+    const endSelect = document.getElementById('picker-end-time');
+    const hiddenStartInput = document.getElementById('id_start_time');
+    const hiddenEndInput = document.getElementById('id_end_time');
+    const slotsContainer = document.getElementById('slots-matrix-container');
+    const slotsCountLabel = document.getElementById('slots-count-label');
+    const slotsDayTitle = document.getElementById('slots-day-title');
+    const confirmationBadge = document.getElementById('schedule-confirmation-badge');
+    const summaryDateDisplay = document.getElementById('summary-date-display');
+    const summaryTimeDisplay = document.getElementById('summary-time-display');
+    const summaryDurationDisplay = document.getElementById('summary-duration-display');
+    const reservationForm = document.getElementById('reservation-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const participantCountInput = document.getElementById('id_participant_count');
+    const warningEl = document.getElementById('participant-capacity-warning');
+    const warningText = document.getElementById('participant-capacity-warning-text');
+
+    function validateParticipantCount() {
+        if (!currentFacilityData || !participantCountInput) return;
+        const count = parseInt(participantCountInput.value, 10);
+        const maxCap = currentFacilityData.capacity;
+        if (!isNaN(count) && count > maxCap) {
+            if (warningText) warningText.textContent = `Participant count (${count}) exceeds ${currentFacilityData.name} capacity of ${maxCap}.`;
+            if (warningEl) warningEl.classList.remove('hidden');
+            participantCountInput.classList.add('border-rose-500', 'bg-rose-50/50');
+        } else {
+            if (warningEl) warningEl.classList.add('hidden');
+            participantCountInput.classList.remove('border-rose-500', 'bg-rose-50/50');
+        }
+    }
+
+    if (participantCountInput) {
+        participantCountInput.addEventListener('input', validateParticipantCount);
+    }
+
+    // Facility preview elements
+    const facilityPreviewCard = document.getElementById('facility-preview-card');
+    const facilityPreviewImg = document.getElementById('facility-preview-img');
+    const facilityPreviewName = document.getElementById('facility-preview-name');
+    const facilityPreviewBadge = document.getElementById('facility-preview-badge');
+    const facilityPreviewLocation = document.getElementById('facility-preview-location');
+    const facilityPreviewCapacity = document.getElementById('facility-preview-capacity');
+    const facilityPreviewHours = document.getElementById('facility-preview-hours');
+
+    let currentSlots = [];
+    let currentFacilityData = null;
+    let maxAllowedDuration = {{ max_duration|default:4 }};
+
+    // Pre-selected parameters from URL or server context
+    const urlParams = new URLSearchParams(window.location.search);
+    let pendingAutoStart = urlParams.get('start') || '{{ preset_start|default:"" }}';
+    let pendingAutoEnd = urlParams.get('end') || '{{ preset_end|default:"" }}';
+
+    if (!pendingAutoStart && hiddenStartInput.value) {
+        const parts = hiddenStartInput.value.split('T');
+        if (parts[1]) pendingAutoStart = parts[1].substring(0, 5);
+    }
+    if (!pendingAutoEnd && hiddenEndInput.value) {
+        const parts = hiddenEndInput.value.split('T');
+        if (parts[1]) pendingAutoEnd = parts[1].substring(0, 5);
+    }
+
+    // Calculate dates helper
+    function getOffsetDateStr(offsetDays) {
+        const d = new Date();
+        d.setDate(d.getDate() + offsetDays);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    // Quick Date Shortcuts
+    document.querySelectorAll('.date-shortcut-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const offset = parseInt(this.getAttribute('data-days'), 10);
+            const targetDateStr = getOffsetDateStr(offset);
+            dateInput.value = targetDateStr;
+
+            // Highlight active shortcut
+            document.querySelectorAll('.date-shortcut-btn').forEach(b => {
+                b.className = 'date-shortcut-btn px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition-colors';
+            });
+            this.className = 'date-shortcut-btn px-2.5 py-1 rounded-md text-[11px] font-semibold border border-[#4a0808]/30 bg-[#4a0808]/10 text-[#4a0808] hover:bg-[#4a0808]/20 transition-colors';
+
+            fetchAvailability();
+        });
+    });
+
+    dateInput.addEventListener('change', function() {
+        // Deselect shortcut buttons highlight
+        document.querySelectorAll('.date-shortcut-btn').forEach(b => {
+            b.className = 'date-shortcut-btn px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition-colors';
+        });
+        fetchAvailability();
+    });
+
+    facilitySelect.addEventListener('change', function() {
+        fetchAvailability();
+    });
+
+    // Fetch availability from API
+    function fetchAvailability() {
+        const facilityId = facilitySelect.value;
+        const targetDate = dateInput.value;
+
+        if (!facilityId) {
+            facilityPreviewCard.classList.add('hidden');
+            slotsContainer.innerHTML = `
+                <div class="col-span-full py-8 text-center text-xs text-slate-500">
+                    <span class="material-symbols-outlined text-[24px] text-slate-400 block mb-1">domain</span>
+                    Please select a campus facility above to view slot availability.
+                </div>
+            `;
+            slotsCountLabel.textContent = 'None';
+            slotsDayTitle.textContent = '';
+            resetTimeDropdowns();
+            return;
+        }
+
+        slotsContainer.innerHTML = `
+            <div class="col-span-full py-8 text-center text-xs text-slate-500">
+                <span class="material-symbols-outlined text-[24px] text-slate-400 block mb-1 animate-spin">progress_activity</span>
+                Checking live facility availability...
+            </div>
+        `;
+        slotsCountLabel.textContent = 'Checking...';
+
+        fetch(`/portal/api/availability/?facility_id=${facilityId}&date=${targetDate}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load availability');
+                return res.json();
+            })
+            .then(data => {
+                currentFacilityData = data.facility;
+                currentSlots = data.slots || [];
+                maxAllowedDuration = data.max_duration || {{ max_duration|default:4 }};
+
+                // Update Facility Preview Card
+                if (currentFacilityData) {
+                    facilityPreviewCard.classList.remove('hidden');
+                    facilityPreviewImg.src = currentFacilityData.image_url;
+                    facilityPreviewImg.alt = currentFacilityData.name;
+                    facilityPreviewName.textContent = currentFacilityData.name;
+                    facilityPreviewBadge.textContent = currentFacilityData.code;
+                    facilityPreviewBadge.className = `px-2 py-0.5 rounded text-[10px] font-bold ${currentFacilityData.badge_color || 'bg-[#6b1414] text-white'}`;
+                    facilityPreviewLocation.textContent = currentFacilityData.location;
+                    facilityPreviewCapacity.textContent = currentFacilityData.capacity;
+                    facilityPreviewHours.textContent = currentFacilityData.operating_hours;
+                    if (participantCountInput) {
+                        participantCountInput.max = currentFacilityData.capacity;
+                        validateParticipantCount();
+                    }
+                }
+
+                slotsDayTitle.textContent = data.display_date;
+
+                if (data.is_closed) {
+                    slotsCountLabel.textContent = 'Closed';
+                    slotsContainer.innerHTML = `
+                        <div class="col-span-full py-8 text-center text-xs text-rose-700 bg-rose-50/70 border border-rose-200/80 rounded-xl">
+                            <span class="material-symbols-outlined text-[26px] text-rose-500 block mb-1">event_busy</span>
+                            This venue is closed on <strong>${data.display_date}</strong>. Please select another date.
+                        </div>
+                    `;
+                    resetTimeDropdowns();
+                    return;
+                }
+
+                renderSlotMatrix(currentSlots);
+                populateStartDropdown(currentSlots);
+            })
+            .catch(err => {
+                console.error(err);
+                slotsCountLabel.textContent = 'Error';
+                slotsContainer.innerHTML = `
+                    <div class="col-span-full py-6 text-center text-xs text-rose-600">
+                        <span class="material-symbols-outlined text-[24px] block mb-1">warning</span>
+                        Unable to load availability. Please try again or select another date.
+                    </div>
+                `;
+                resetTimeDropdowns();
+            });
+    }
+
+    // Render visual slot tiles
+    function renderSlotMatrix(slots) {
+        if (!slots || slots.length === 0) {
+            slotsCountLabel.textContent = 'No slots';
+            slotsContainer.innerHTML = `
+                <div class="col-span-full py-6 text-center text-xs text-slate-500">
+                    No operating hours scheduled for this date.
+                </div>
+            `;
+            return;
+        }
+
+        const availableCount = slots.filter(s => s.is_available).length;
+        slotsCountLabel.textContent = `${availableCount} of ${slots.length} available`;
+
+        let html = '';
+        slots.forEach((slot, idx) => {
+            if (slot.is_available) {
+                html += `
+                    <button type="button" 
+                        class="slot-tile p-3 rounded-xl border text-left transition-all duration-150 relative bg-white border-emerald-200/90 hover:border-emerald-400 hover:bg-emerald-50/40 hover:shadow-2xs cursor-pointer select-none"
+                        data-slot-idx="${idx}"
+                        data-start="${slot.start_time}"
+                        data-end="${slot.end_time}">
+                        <div class="flex items-center justify-between gap-1 mb-1.5">
+                            <span class="text-xs font-bold text-slate-800 tracking-tight whitespace-nowrap">
+                                ${slot.start_display} &ndash; ${slot.end_display}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400 font-medium">1 hr slot</span>
+                            <span class="slot-status-pill inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wide">
+                                <span class="slot-dot w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                <span class="slot-text">Available</span>
+                            </span>
+                        </div>
+                    </button>
+                `;
+            } else {
+                html += `
+                    <div class="p-3 rounded-xl border text-left bg-slate-50 border-slate-200/80 opacity-70 cursor-not-allowed select-none">
+                        <div class="flex items-center justify-between gap-1 mb-1.5">
+                            <span class="text-xs font-semibold text-slate-400 line-through tracking-tight whitespace-nowrap">
+                                ${slot.start_display} &ndash; ${slot.end_display}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400 font-medium">1 hr slot</span>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-500 uppercase tracking-wide">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                <span>Unavailable</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        slotsContainer.innerHTML = html;
+
+        // Interactive Slot Tile Click Handler (supports continuous connected extension and range toggle)
+        slotsContainer.querySelectorAll('.slot-tile').forEach(tile => {
+            tile.addEventListener('click', function() {
+                const clickedStart = this.getAttribute('data-start');
+                const clickedEnd = this.getAttribute('data-end');
+
+                const currentStart = startSelect.value;
+                const currentEnd = endSelect.value;
+
+                // Case 1: No current selection or start/end missing
+                if (!currentStart || !currentEnd) {
+                    applyScheduleSelection(clickedStart, clickedEnd);
+                    return;
+                }
+
+                const currentStartIdx = currentSlots.findIndex(s => s.start_time === currentStart);
+                const currentEndIdx = currentSlots.findIndex(s => s.end_time === currentEnd);
+                const clickedIdx = currentSlots.findIndex(s => s.start_time === clickedStart);
+
+                if (currentStartIdx === -1 || currentEndIdx === -1 || clickedIdx === -1) {
+                    applyScheduleSelection(clickedStart, clickedEnd);
+                    return;
+                }
+
+                // Case 2: Clicked slot is already inside current selection
+                if (clickedIdx >= currentStartIdx && clickedIdx <= currentEndIdx) {
+                    // If user clicks the last slot of a multi-hour selection, shrink by 1 hour from the end
+                    if (clickedIdx === currentEndIdx && currentEndIdx > currentStartIdx) {
+                        const newEnd = currentSlots[currentEndIdx - 1].end_time;
+                        applyScheduleSelection(currentStart, newEnd);
+                        return;
+                    }
+                    // If user clicks the first slot of a multi-hour selection, shrink by 1 hour from the start
+                    if (clickedIdx === currentStartIdx && currentEndIdx > currentStartIdx) {
+                        const newStart = currentSlots[currentStartIdx + 1].start_time;
+                        applyScheduleSelection(newStart, currentEnd);
+                        return;
+                    }
+                    // Otherwise (single slot), reset to just this clicked slot
+                    applyScheduleSelection(clickedStart, clickedEnd);
+                    return;
+                }
+
+                // Case 3: Extending forward (clicked slot is after current selection)
+                if (clickedIdx > currentEndIdx) {
+                    // Check if all slots from currentStartIdx to clickedIdx are available
+                    let allAvailable = true;
+                    for (let i = currentStartIdx; i <= clickedIdx; i++) {
+                        if (!currentSlots[i].is_available) {
+                            allAvailable = false;
+                            break;
+                        }
+                    }
+                    const totalDuration = clickedIdx - currentStartIdx + 1;
+                    if (allAvailable && totalDuration <= maxAllowedDuration) {
+                        // Extend forward! E.g. had 8-9, clicked 9-10 -> extends to 8-10!
+                        applyScheduleSelection(currentStart, clickedEnd);
+                        return;
+                    } else {
+                        // Cannot connect through an unavailable slot or exceeds max duration: start new selection at clicked slot
+                        applyScheduleSelection(clickedStart, clickedEnd);
+                        return;
+                    }
+                }
+
+                // Case 4: Extending backward (clicked slot is before current selection)
+                if (clickedIdx < currentStartIdx) {
+                    // Check if all slots from clickedIdx to currentEndIdx are available
+                    let allAvailable = true;
+                    for (let i = clickedIdx; i <= currentEndIdx; i++) {
+                        if (!currentSlots[i].is_available) {
+                            allAvailable = false;
+                            break;
+                        }
+                    }
+                    const totalDuration = currentEndIdx - clickedIdx + 1;
+                    if (allAvailable && totalDuration <= maxAllowedDuration) {
+                        // Extend backward! E.g. had 9-10, clicked 8-9 -> extends to 8-10!
+                        applyScheduleSelection(clickedStart, currentEnd);
+                        return;
+                    } else {
+                        // Cannot connect cleanly or exceeds max duration: start new selection at clicked slot
+                        applyScheduleSelection(clickedStart, clickedEnd);
+                        return;
+                    }
+                }
+
+                // Fallback: select clicked slot
+                applyScheduleSelection(clickedStart, clickedEnd);
+            });
+        });
+
+        highlightSelectedSlots();
+    }
+
+    // Programmatically apply start and end selection to dropdowns and sync form
+    function applyScheduleSelection(startHhmm, endHhmm) {
+        if (!startSelect.querySelector(`option[value="${startHhmm}"]`)) {
+            return;
+        }
+        startSelect.value = startHhmm;
+        onStartTimeChanged(endHhmm);
+    }
+
+    // Populate Start Time dropdown with strictly available slots
+    function populateStartDropdown(slots) {
+        startSelect.innerHTML = '<option value="">-- Choose start time --</option>';
+        endSelect.innerHTML = '<option value="">-- Select start time first --</option>';
+        endSelect.disabled = true;
+        confirmationBadge.classList.add('hidden');
+
+        const availableSlots = slots.filter(s => s.is_available);
+        if (availableSlots.length === 0) {
+            startSelect.innerHTML = '<option value="">No available time slots on this date</option>';
+            startSelect.disabled = true;
+            hiddenStartInput.value = '';
+            hiddenEndInput.value = '';
+            return;
+        }
+
+        startSelect.disabled = false;
+        availableSlots.forEach(slot => {
+            const opt = document.createElement('option');
+            opt.value = slot.start_time;
+            opt.textContent = `${slot.start_display} (Available)`;
+            startSelect.appendChild(opt);
+        });
+
+        // Auto-select start time if preset via URL or server context
+        let autoStart = pendingAutoStart;
+        if (!autoStart && hiddenStartInput.value) {
+            const parts = hiddenStartInput.value.split('T');
+            if (parts[1]) autoStart = parts[1].substring(0, 5);
+        }
+
+        if (autoStart && startSelect.querySelector(`option[value="${autoStart}"]`)) {
+            startSelect.value = autoStart;
+            pendingAutoStart = null;
+            onStartTimeChanged();
+        } else {
+            hiddenStartInput.value = '';
+            hiddenEndInput.value = '';
+        }
+    }
+
+    // Handler when Start Time is changed
+    function onStartTimeChanged(preferredEnd) {
+        const chosenStart = startSelect.value;
+        if (!chosenStart) {
+            endSelect.innerHTML = '<option value="">-- Select start time first --</option>';
+            endSelect.disabled = true;
+            confirmationBadge.classList.add('hidden');
+            hiddenStartInput.value = '';
+            hiddenEndInput.value = '';
+            highlightSelectedSlots();
+            return;
+        }
+
+        // Find starting slot index
+        const startIndex = currentSlots.findIndex(s => s.start_time === chosenStart);
+        if (startIndex === -1) return;
+
+        endSelect.innerHTML = '<option value="">-- Choose end time --</option>';
+        endSelect.disabled = false;
+
+        // Dynamically compute valid consecutive ending hours up to maxAllowedDuration
+        let consecutiveHours = 0;
+        for (let i = startIndex; i < currentSlots.length; i++) {
+            const slot = currentSlots[i];
+            // If any subsequent slot is NOT available, stop immediately!
+            if (!slot.is_available) {
+                break;
+            }
+            consecutiveHours++;
+            const durationLabel = consecutiveHours === 1 ? '1 hour' : `${consecutiveHours} hours`;
+            const opt = document.createElement('option');
+            opt.value = slot.end_time;
+            opt.textContent = `${slot.end_display} (${durationLabel})`;
+            endSelect.appendChild(opt);
+
+            if (consecutiveHours >= maxAllowedDuration) {
+                break;
+            }
+        }
+
+        // Auto-select end time: prioritize preferredEnd if specified, then pendingAutoEnd, then default to first available end time (1 hr)
+        let autoEnd = preferredEnd || pendingAutoEnd;
+        if (!autoEnd && hiddenEndInput.value) {
+            const parts = hiddenEndInput.value.split('T');
+            if (parts[1]) autoEnd = parts[1].substring(0, 5);
+        }
+
+        if (autoEnd && endSelect.querySelector(`option[value="${autoEnd}"]`)) {
+            endSelect.value = autoEnd;
+            if (preferredEnd) pendingAutoEnd = null;
+            onEndTimeChanged();
+        } else if (endSelect.options.length > 1) {
+            endSelect.selectedIndex = 1;
+            onEndTimeChanged();
+        } else {
+            onEndTimeChanged();
+        }
+    }
+
+    // Handler when End Time is changed
+    function onEndTimeChanged() {
+        const chosenStart = startSelect.value;
+        const chosenEnd = endSelect.value;
+        const targetDate = dateInput.value;
+
+        if (!chosenStart || !chosenEnd) {
+            confirmationBadge.classList.add('hidden');
+            hiddenStartInput.value = '';
+            hiddenEndInput.value = '';
+            highlightSelectedSlots();
+            return;
+        }
+
+        // Sync hidden inputs for Django form submission
+        hiddenStartInput.value = `${targetDate}T${chosenStart}`;
+        hiddenEndInput.value = `${targetDate}T${chosenEnd}`;
+
+        // Calculate duration
+        const startIndex = currentSlots.findIndex(s => s.start_time === chosenStart);
+        const endIndex = currentSlots.findIndex(s => s.end_time === chosenEnd);
+        const durationHours = (startIndex !== -1 && endIndex !== -1) ? (endIndex - startIndex + 1) : 1;
+
+        // Format nice display
+        const startSlot = currentSlots.find(s => s.start_time === chosenStart);
+        const endSlot = currentSlots.find(s => s.end_time === chosenEnd);
+
+        summaryDateDisplay.textContent = slotsDayTitle.textContent || targetDate;
+        summaryTimeDisplay.textContent = `${startSlot ? startSlot.start_display : chosenStart} – ${endSlot ? endSlot.end_display : chosenEnd}`;
+        summaryDurationDisplay.textContent = durationHours;
+        confirmationBadge.classList.remove('hidden');
+
+        highlightSelectedSlots();
+    }
+
+    // Visual matrix highlight
+    function highlightSelectedSlots() {
+        const chosenStart = startSelect.value;
+        const chosenEnd = endSelect.value;
+
+        slotsContainer.querySelectorAll('.slot-tile').forEach(tile => {
+            const start = tile.getAttribute('data-start');
+            const end = tile.getAttribute('data-end');
+            const pill = tile.querySelector('.slot-status-pill');
+            const dot = tile.querySelector('.slot-dot');
+            const text = tile.querySelector('.slot-text');
+
+            if (chosenStart && chosenEnd && start >= chosenStart && end <= chosenEnd) {
+                tile.className = 'slot-tile p-3 rounded-xl border text-left transition-all duration-150 relative bg-[#4a0808]/10 border-[#4a0808] ring-2 ring-[#4a0808]/30 shadow-xs cursor-pointer select-none';
+                if (pill) pill.className = 'slot-status-pill inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#4a0808] text-white uppercase tracking-wide';
+                if (dot) dot.className = 'slot-dot w-1.5 h-1.5 rounded-full bg-white';
+                if (text) text.textContent = 'Selected ✓';
+            } else {
+                tile.className = 'slot-tile p-3 rounded-xl border text-left transition-all duration-150 relative bg-white border-emerald-200/90 hover:border-emerald-400 hover:bg-emerald-50/40 hover:shadow-2xs cursor-pointer select-none';
+                if (pill) pill.className = 'slot-status-pill inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wide';
+                if (dot) dot.className = 'slot-dot w-1.5 h-1.5 rounded-full bg-emerald-600';
+                if (text) text.textContent = 'Available';
+            }
+        });
+    }
+
+    function resetTimeDropdowns() {
+        startSelect.innerHTML = '<option value="">-- Choose start time --</option>';
+        startSelect.disabled = true;
+        endSelect.innerHTML = '<option value="">-- Select start time first --</option>';
+        endSelect.disabled = true;
+        confirmationBadge.classList.add('hidden');
+        hiddenStartInput.value = '';
+        hiddenEndInput.value = '';
+    }
+
+    startSelect.addEventListener('change', onStartTimeChanged);
+    endSelect.addEventListener('change', onEndTimeChanged);
+
+    // Form submission validation
+    reservationForm.addEventListener('submit', function(e) {
+        if (!facilitySelect.value) {
+            e.preventDefault();
+            alert('Please select a campus facility.');
+            facilitySelect.focus();
+            return false;
+        }
+
+        if (!hiddenStartInput.value || !hiddenEndInput.value) {
+            e.preventDefault();
+            alert('Please select both a valid Start Time and End Time for your reservation.');
+            startSelect.focus();
+            return false;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[17px] animate-spin">progress_activity</span>
+            <span>Submitting Request...</span>
+        `;
+    });
+
+    // Initial check on load
+    if (facilitySelect.value) {
+        fetchAvailability();
+    }
+});
+</script>
 {% endblock %}

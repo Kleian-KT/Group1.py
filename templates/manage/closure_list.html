@@ -156,14 +156,59 @@
                 Active closure periods block overlapping reservations from being approved or submitted.
             </p>
 
+            {% if form.errors %}
+                <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs mb-4">
+                    <div class="font-bold flex items-center gap-1 mb-1">
+                        <span class="material-symbols-outlined text-[15px] text-rose-600">error</span>
+                        <span>Please correct the following errors:</span>
+                    </div>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
             <form method="post" class="space-y-4">
                 {% csrf_token %}
                 <div class="space-y-1">
-                    <label class="block text-xs font-semibold text-slate-700">Facility <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-semibold text-slate-700">Facility Venue <span class="text-rose-500">*</span></label>
                     {{ form.facility }}
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <!-- One-Click Date Presets -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-[11px] font-semibold text-slate-600">Quick Date Presets</label>
+                        <span class="text-[10px] text-slate-400">1-click schedule window</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setClosurePreset('today')">
+                            <span class="material-symbols-outlined text-[13px] text-amber-600">today</span>
+                            <span>Today (Full Day)</span>
+                        </button>
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setClosurePreset('tomorrow')">
+                            <span class="material-symbols-outlined text-[13px] text-blue-600">event</span>
+                            <span>Tomorrow</span>
+                        </button>
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setClosurePreset('weekend')">
+                            <span class="material-symbols-outlined text-[13px] text-emerald-600">weekend</span>
+                            <span>This Weekend</span>
+                        </button>
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setClosurePreset('3days')">
+                            <span class="material-symbols-outlined text-[13px] text-purple-600">date_range</span>
+                            <span>Next 3 Days</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold text-slate-700">Start Datetime <span class="text-rose-500">*</span></label>
                         {{ form.start_time }}
@@ -174,12 +219,30 @@
                     </div>
                 </div>
 
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold text-slate-700">Reason for Closure <span class="text-rose-500">*</span></label>
+                <!-- Quick Reason Chips -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-slate-700">Reason for Closure <span class="text-rose-500">*</span></label>
+                        <span class="text-[10px] text-slate-400">Select chip or type</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mb-1.5">
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setClosureReason('Scheduled Facility Maintenance & Repairs')">
+                            <span>🛠️ Maintenance</span>
+                        </button>
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setClosureReason('Electrical & Power Grid Inspection')">
+                            <span>⚡ Power Grid</span>
+                        </button>
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setClosureReason('Deep Campus Sanitation & Pest Control')">
+                            <span>🧼 Sanitation</span>
+                        </button>
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setClosureReason('Official BulSU Holiday & Campus Blackout')">
+                            <span>🏛️ Holiday Blackout</span>
+                        </button>
+                    </div>
                     {{ form.reason }}
                 </div>
 
-                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors mt-2">
+                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-[#6b1414] hover:bg-[#4a0808] text-white text-xs font-semibold shadow-sm transition-all mt-2">
                     <span class="material-symbols-outlined text-[16px]">block</span>
                     <span>Schedule Closure Period</span>
                 </button>
@@ -187,4 +250,61 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function toLocalISOString(date, hours, minutes) {
+        const d = new Date(date);
+        d.setHours(hours, minutes, 0, 0);
+        const year = d.getFullYear();
+        const month = pad(d.getMonth() + 1);
+        const day = pad(d.getDate());
+        const hh = pad(d.getHours());
+        const mm = pad(d.getMinutes());
+        return `${year}-${month}-${day}T${hh}:${mm}`;
+    }
+
+    window.setClosurePreset = function(type) {
+        const startInput = document.getElementById('id_start_time');
+        const endInput = document.getElementById('id_end_time');
+        if (!startInput || !endInput) return;
+
+        const now = new Date();
+        if (type === 'today') {
+            startInput.value = toLocalISOString(now, 6, 0);
+            endInput.value = toLocalISOString(now, 22, 0);
+        } else if (type === 'tomorrow') {
+            const tom = new Date(now);
+            tom.setDate(tom.getDate() + 1);
+            startInput.value = toLocalISOString(tom, 6, 0);
+            endInput.value = toLocalISOString(tom, 22, 0);
+        } else if (type === 'weekend') {
+            // Saturday to Sunday
+            const dayOfWeek = now.getDay();
+            const daysUntilSat = (6 - dayOfWeek + 7) % 7;
+            const sat = new Date(now);
+            sat.setDate(sat.getDate() + (daysUntilSat === 0 ? 7 : daysUntilSat));
+            const sun = new Date(sat);
+            sun.setDate(sun.getDate() + 1);
+
+            startInput.value = toLocalISOString(sat, 6, 0);
+            endInput.value = toLocalISOString(sun, 22, 0);
+        } else if (type === '3days') {
+            const end = new Date(now);
+            end.setDate(end.getDate() + 3);
+            startInput.value = toLocalISOString(now, 6, 0);
+            endInput.value = toLocalISOString(end, 22, 0);
+        }
+    };
+
+    window.setClosureReason = function(reason) {
+        const reasonInput = document.getElementById('id_reason');
+        if (reasonInput) {
+            reasonInput.value = reason;
+            reasonInput.focus();
+        }
+    };
+})();
+</script>
 {% endblock %}

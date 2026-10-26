@@ -171,7 +171,11 @@ def admin_facility_add_amenity(request, facility_id):
             facility_amenity.save()
             messages.success(request, f"Amenity '{facility_amenity.amenity.name}' assigned to {facility.name}.")
     else:
-        messages.error(request, "Error adding amenity. Please check input values.")
+        errs = []
+        for field, err_list in form.errors.items():
+            errs.extend(err_list)
+        err_msg = "; ".join(errs) if errs else "Please check input values."
+        messages.error(request, f"Error adding amenity: {err_msg}")
     return redirect('admin_facility_detail', facility_id=facility.id)
 
 
@@ -204,7 +208,11 @@ def admin_facility_save_operating_hour(request, facility_id):
         action_verb = "created" if created else "updated"
         messages.success(request, f"Operating schedule for {obj.get_day_of_week_display()} {action_verb}.")
     else:
-        messages.error(request, "Failed to update operating hours. Closing time must be after opening time.")
+        errs = []
+        for field, err_list in form.errors.items():
+            errs.extend(err_list)
+        err_msg = "; ".join(errs) if errs else "Closing time must be after opening time."
+        messages.error(request, f"Failed to update operating hours: {err_msg}")
     return redirect('admin_facility_detail', facility_id=facility.id)
 
 
@@ -336,10 +344,12 @@ def get_preview_slots_for_facility(facility, target_date):
             chunk = raw_slots[i:i + chunk_size]
             if chunk:
                 is_avail = all(c['is_available'] for c in chunk)
-                reason = "Available" if is_avail else (next((c['reason'] for c in chunk if not c['is_available']), "Reserved"))
+                reason = "Available" if is_avail else "Unavailable"
                 preview_slots.append({
                     'start_time': chunk[0]['start_time'],
                     'end_time': chunk[-1]['end_time'],
+                    'start_display': chunk[0].get('start_display', chunk[0]['start_time']),
+                    'end_display': chunk[-1].get('end_display', chunk[-1]['end_time']),
                     'is_available': is_avail,
                     'reason': reason
                 })

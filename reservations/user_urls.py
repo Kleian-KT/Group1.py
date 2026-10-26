@@ -16,4 +16,7 @@ urlpatterns = [
     path('reservations/create/', res_views.user_reservation_create, name='user_reservation_create'),
     path('reservations/<int:reservation_id>/', res_views.user_reservation_detail, name='user_reservation_detail'),
     path('reservations/<int:reservation_id>/cancel/', res_views.user_reservation_cancel, name='user_reservation_cancel'),
+    
+    # Real-time Availability API
+    path('api/availability/', res_views.api_facility_availability, name='api_facility_availability'),
 ]

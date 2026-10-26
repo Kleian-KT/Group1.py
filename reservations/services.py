@@ -47,6 +47,22 @@ def get_overlapping_approved_reservations(facility, start_time, end_time, exclud
     return qs
 
 
+def get_overlapping_active_reservations(facility, start_time, end_time, exclude_reservation_id=None):
+    """
+    Returns QuerySet of active reservations (PENDING, APPROVED, or CHECKED_IN) for facility overlapping [start_time, end_time).
+    Pending requests immediately hold the slot to prevent conflicting submissions.
+    """
+    qs = Reservation.objects.filter(
+        facility=facility,
+        status__in=[Reservation.STATUS_PENDING, Reservation.STATUS_APPROVED, Reservation.STATUS_CHECKED_IN],
+        start_time__lt=end_time,
+        end_time__gt=start_time
+    )
+    if exclude_reservation_id:
+        qs = qs.exclude(pk=exclude_reservation_id)
+    return qs
+
+
 def get_overlapping_closures(facility, start_time, end_time, exclude_closure_id=None):
     """
     Returns QuerySet of active ClosureBlocks for facility overlapping [start_time, end_time).
@@ -144,12 +160,12 @@ def submit_reservation(user, facility, title, purpose, participant_count, start_
     # Check active closure conflicts
     closure_conflicts = get_overlapping_closures(facility, start_time, end_time)
     if closure_conflicts.exists():
-        raise ValidationError("The requested time slot overlaps with an active facility closure.")
+        raise ValidationError("The requested time slot is unavailable due to an active facility closure.")
 
-    # Check existing approved bookings conflict
-    approved_conflicts = get_overlapping_approved_reservations(facility, start_time, end_time)
-    if approved_conflicts.exists():
-        raise ValidationError("The requested time slot is already booked and approved.")
+    # Check existing active bookings and pending holds (zero conflicts policy)
+    active_conflicts = get_overlapping_active_reservations(facility, start_time, end_time)
+    if active_conflicts.exists():
+        raise ValidationError("The requested time slot is unavailable. Please select another available schedule.")
 
     reference = Reservation.generate_reference()
     while Reservation.objects.filter(reference=reference).exists():
@@ -332,12 +348,12 @@ def reschedule_approved_reservation(reservation_id, new_start_time, new_end_time
             if closures.exists():
                 raise ReservationConflictError("New schedule overlaps with an active facility closure.")
 
-            # Check conflicts with other approved bookings
-            conflicts = get_overlapping_approved_reservations(
+            # Check conflicts with other active bookings
+            conflicts = get_overlapping_active_reservations(
                 facility, new_start_time, new_end_time, exclude_reservation_id=reservation.id
             )
             if conflicts.exists():
-                raise ReservationConflictError("New schedule conflicts with an existing approved reservation.")
+                raise ReservationConflictError("New schedule conflicts with an existing reservation.")
 
             # Record ReservationChange
             ReservationChange.objects.create(
@@ -618,12 +634,22 @@ def archive_closure_block(closure_id, admin_user, request=None):
 def calculate_facility_slots(facility, target_date):
     """
     Calculates hourly availability slots for a facility on a specific date.
-    Returns list of slot dicts: [{'start': time, 'end': time, 'is_available': bool, 'reason': str}]
-    Adheres to privacy requirement: doesn't reveal applicant private details.
+    Returns list of slot dicts: [{'start_time': '08:00', 'end_time': '09:00', 'is_available': bool, 'reason': str}]
+    Adheres strictly to privacy requirement: doesn't reveal whether a slot is pending,
+    approved, or under closure. All unavailable slots simply display 'Unavailable'.
     """
     is_closed, open_time, close_time = facility.get_operating_hours_for_date(target_date)
-    if is_closed:
-        return {'is_closed': True, 'open_time': open_time, 'close_time': close_time, 'slots': []}
+    if is_closed or not open_time or not close_time:
+        return {
+            'is_closed': True,
+            'open_time': open_time.strftime('%H:%M') if open_time else None,
+            'close_time': close_time.strftime('%H:%M') if close_time else None,
+            'open_time_display': open_time.strftime('%I:%M %p').lstrip('0') if open_time else '',
+            'close_time_display': close_time.strftime('%I:%M %p').lstrip('0') if close_time else '',
+            'open_time_obj': open_time,
+            'close_time_obj': close_time,
+            'slots': []
+        }
 
     # Fetch active closures for this day
     day_start = timezone.make_aware(datetime.datetime.combine(target_date, datetime.time.min))
@@ -636,16 +662,18 @@ def calculate_facility_slots(facility, target_date):
         end_time__gt=day_start
     )
 
-    # Fetch approved/checked_in bookings for this day
-    approved_bookings = Reservation.objects.filter(
+    # Fetch active bookings (PENDING, APPROVED, CHECKED_IN) for this day
+    active_bookings = Reservation.objects.filter(
         facility=facility,
-        status__in=[Reservation.STATUS_APPROVED, Reservation.STATUS_CHECKED_IN],
+        status__in=[Reservation.STATUS_PENDING, Reservation.STATUS_APPROVED, Reservation.STATUS_CHECKED_IN],
         start_time__lt=day_end,
         end_time__gt=day_start
     )
 
     slots = []
     current_time = open_time
+    now = timezone.now()
+
     # Generate 1-hour slots from open_time to close_time
     while current_time < close_time:
         slot_start_dt = timezone.make_aware(datetime.datetime.combine(target_date, current_time))
@@ -656,21 +684,22 @@ def calculate_facility_slots(facility, target_date):
 
         # Check closure overlap
         has_closure = closures.filter(start_time__lt=slot_end_dt, end_time__gt=slot_start_dt).exists()
-        # Check approved booking overlap
-        has_booking = approved_bookings.filter(start_time__lt=slot_end_dt, end_time__gt=slot_start_dt).exists()
+        # Check active booking overlap (pending holds, approved, checked-in)
+        has_booking = active_bookings.filter(start_time__lt=slot_end_dt, end_time__gt=slot_start_dt).exists()
+        # Check if slot is in the past
+        is_past = slot_start_dt <= now
 
-        is_available = not (has_closure or has_booking)
-        reason = "Available"
-        if has_closure:
-            reason = "Facility Closed / Maintenance"
-        elif has_booking:
-            reason = "Booked"
+        is_available = not (has_closure or has_booking or is_past)
+        # Generic label for non-available slots to prevent privacy leaks or favoritism
+        reason = "Available" if is_available else "Unavailable"
 
         slots.append({
-            'start_time': current_time,
-            'end_time': slot_end_time,
-            'start_dt': slot_start_dt,
-            'end_dt': slot_end_dt,
+            'start_time': current_time.strftime('%H:%M'),
+            'end_time': slot_end_time.strftime('%H:%M'),
+            'start_display': slot_start_dt.strftime('%I:%M %p').lstrip('0'),
+            'end_display': slot_end_dt.strftime('%I:%M %p').lstrip('0'),
+            'start_iso': slot_start_dt.strftime('%Y-%m-%dT%H:%M'),
+            'end_iso': slot_end_dt.strftime('%Y-%m-%dT%H:%M'),
             'is_available': is_available,
             'reason': reason
         })
@@ -679,7 +708,11 @@ def calculate_facility_slots(facility, target_date):
 
     return {
         'is_closed': False,
-        'open_time': open_time,
-        'close_time': close_time,
+        'open_time': open_time.strftime('%H:%M'),
+        'close_time': close_time.strftime('%H:%M'),
+        'open_time_display': open_time.strftime('%I:%M %p').lstrip('0'),
+        'close_time_display': close_time.strftime('%I:%M %p').lstrip('0'),
+        'open_time_obj': open_time,
+        'close_time_obj': close_time,
         'slots': slots
     }

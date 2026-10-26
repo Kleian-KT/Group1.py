@@ -7,6 +7,7 @@ from django.db.models import Q, Count
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 
 from facilities.models import Facility, FacilityCategory
 from reservations.models import Reservation, ClosureBlock, ReservationChange
@@ -19,7 +20,8 @@ from reservations.services import (
     reschedule_approved_reservation, cancel_reservation_by_user,
     cancel_reservation_by_admin, create_closure_block, archive_closure_block,
     get_overlapping_approved_reservations, get_overlapping_closures,
-    validate_reservation_times_and_rules, ReservationConflictError, ReservationWorkflowError
+    validate_reservation_times_and_rules, ReservationConflictError, ReservationWorkflowError,
+    calculate_facility_slots
 )
 from audit_settings.models import SystemSetting
 from accounts.permissions import admin_required, active_user_required
@@ -489,6 +491,8 @@ def user_reservation_list(request):
 def user_reservation_create(request):
     initial_facility = request.GET.get('facility')
     initial_date = request.GET.get('date')
+    initial_start = request.GET.get('start') or request.GET.get('start_time')
+    initial_end = request.GET.get('end') or request.GET.get('end_time')
 
     if request.method == 'POST':
         form = ReservationSubmissionForm(request.POST)
@@ -517,17 +521,27 @@ def user_reservation_create(request):
         if initial_facility:
             initial['facility'] = initial_facility
         if initial_date:
-            initial['start_time'] = f"{initial_date}T09:00"
-            initial['end_time'] = f"{initial_date}T11:00"
+            st = initial_start[:5] if initial_start else "09:00"
+            et = initial_end[:5] if initial_end else "10:00"
+            initial['start_time'] = f"{initial_date}T{st}"
+            initial['end_time'] = f"{initial_date}T{et}"
         form = ReservationSubmissionForm(initial=initial)
 
     max_duration = SystemSetting.get_max_duration_hours()
     max_advance = SystemSetting.get_max_advance_days()
+    today = timezone.now().date()
+    max_date = today + datetime.timedelta(days=max_advance)
+    default_date = initial_date or (today + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
     return render(request, 'portal/reservation_create.html', {
         'form': form,
         'max_duration': max_duration,
         'max_advance': max_advance,
+        'today_str': today.strftime('%Y-%m-%d'),
+        'max_date_str': max_date.strftime('%Y-%m-%d'),
+        'default_date': default_date,
+        'preset_start': initial_start[:5] if initial_start else '',
+        'preset_end': initial_end[:5] if initial_end else '',
         'active_menu': 'reservations'
     })
 
@@ -562,3 +576,65 @@ def user_reservation_cancel(request, reservation_id):
     except Exception as e:
         messages.error(request, f"Cancellation failed: {e}")
     return redirect('user_reservation_detail', reservation_id=reservation.id)
+
+
+@active_user_required
+def api_facility_availability(request):
+    """
+    Returns real-time hourly slot availability for a facility on a specific date.
+    All non-available slots (pending holds, approved bookings, closures, past time)
+    are strictly labeled 'Unavailable' with no applicant or status details disclosed.
+    """
+    facility_id = request.GET.get('facility_id')
+    date_str = request.GET.get('date')
+
+    if not facility_id:
+        return JsonResponse({'error': 'Facility ID is required.'}, status=400)
+
+    try:
+        facility = Facility.objects.select_related('category').get(id=facility_id)
+    except (Facility.DoesNotExist, ValueError):
+        return JsonResponse({'error': 'Facility not found.'}, status=404)
+
+    if date_str:
+        try:
+            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'error': 'Invalid date format (expected YYYY-MM-DD).'}, status=400)
+    else:
+        target_date = timezone.now().date()
+
+    availability_data = calculate_facility_slots(facility, target_date)
+    open_t = availability_data.get('open_time')
+    close_t = availability_data.get('close_time')
+    open_disp = availability_data.get('open_time_display') or (facility.default_open_time.strftime('%I:%M %p').lstrip('0') if facility.default_open_time else '')
+    close_disp = availability_data.get('close_time_display') or (facility.default_close_time.strftime('%I:%M %p').lstrip('0') if facility.default_close_time else '')
+    op_hours_display = f"{open_disp} - {close_disp}" if open_disp and close_disp else "8:00 AM - 8:00 PM"
+
+    facility_info = {
+        'id': facility.id,
+        'name': facility.name,
+        'code': facility.code,
+        'location': facility.location,
+        'capacity': facility.capacity,
+        'category': facility.category.name if facility.category else '',
+        'image_url': facility.get_image_url(),
+        'badge_color': facility.badge_color,
+        'operating_hours': op_hours_display,
+        'is_active': facility.is_active,
+    }
+
+    return JsonResponse({
+        'facility': facility_info,
+        'date': target_date.strftime('%Y-%m-%d'),
+        'display_date': target_date.strftime('%A, %B %d, %Y'),
+        'is_closed': availability_data.get('is_closed', False),
+        'open_time': open_t,
+        'close_time': close_t,
+        'open_time_display': open_disp,
+        'close_time_display': close_disp,
+        'slots': availability_data.get('slots', []),
+        'max_duration': SystemSetting.get_max_duration_hours(),
+        'max_advance': SystemSetting.get_max_advance_days()
+    })
+

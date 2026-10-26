@@ -61,8 +61,40 @@
             </div>
         {% endif %}
 
-        <form method="post" class="space-y-4">
+        <form method="post" class="space-y-4" id="reschedule-form" 
+              data-orig-start="{{ reservation.start_time|date:'Y-m-d\TH:i' }}"
+              data-orig-end="{{ reservation.end_time|date:'Y-m-d\TH:i' }}">
             {% csrf_token %}
+
+            <!-- Quick Shift Presets -->
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <label class="block text-[11px] font-semibold text-slate-600">Quick Shift Presets</label>
+                    <span class="text-[10px] text-slate-400">Shift relative to current slot</span>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                    <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="shiftRescheduleDays(1)">
+                        <span class="material-symbols-outlined text-[13px] text-amber-600">fast_forward</span>
+                        <span>+1 Day (Same Hours)</span>
+                    </button>
+                    <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="shiftRescheduleDays(2)">
+                        <span class="material-symbols-outlined text-[13px] text-blue-600">fast_forward</span>
+                        <span>+2 Days</span>
+                    </button>
+                    <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="shiftRescheduleDays(7)">
+                        <span class="material-symbols-outlined text-[13px] text-purple-600">next_week</span>
+                        <span>+1 Week</span>
+                    </button>
+                    <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setSlotWindow(8, 12)">
+                        <span class="material-symbols-outlined text-[13px] text-amber-600">wb_sunny</span>
+                        <span>Morning (8am–12pm)</span>
+                    </button>
+                    <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setSlotWindow(13, 17)">
+                        <span class="material-symbols-outlined text-[13px] text-indigo-600">wb_twilight</span>
+                        <span>Afternoon (1pm–5pm)</span>
+                    </button>
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1">
@@ -75,8 +107,25 @@
                 </div>
             </div>
 
-            <div class="space-y-1">
-                <label class="block text-xs font-semibold text-slate-700">Administrative Reason for Rescheduling <span class="text-rose-500">*</span></label>
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-semibold text-slate-700">Administrative Reason for Rescheduling <span class="text-rose-500">*</span></label>
+                    <span class="text-[10px] text-slate-400">Select chip or type</span>
+                </div>
+                <div class="flex flex-wrap gap-1.5 mb-1.5">
+                    <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setRescheduleReason('Administrative schedule adjustment to accommodate high-priority institutional event.')">
+                        <span>🏛️ Administrative Adjustment</span>
+                    </button>
+                    <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setRescheduleReason('Facility technical setup and maintenance window conflict resolution.')">
+                        <span>🛠️ Facility Maintenance</span>
+                    </button>
+                    <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setRescheduleReason('Applicant formal request for schedule adjustment.')">
+                        <span>📝 Applicant Request</span>
+                    </button>
+                    <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setRescheduleReason('Class and university activity suspension due to inclement weather.')">
+                        <span>🌧️ Weather / Suspension</span>
+                    </button>
+                </div>
                 {{ form.reason }}
                 <span class="text-[11px] text-slate-400">Reason will be permanently archived in the ReservationChange audit record.</span>
             </div>
@@ -98,4 +147,60 @@
         </form>
     </div>
 </div>
+
+<script>
+(function() {
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function toLocalISOString(date) {
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = pad(d.getMonth() + 1);
+        const day = pad(d.getDate());
+        const hh = pad(d.getHours());
+        const mm = pad(d.getMinutes());
+        return `${year}-${month}-${day}T${hh}:${mm}`;
+    }
+
+    const formEl = document.getElementById('reschedule-form');
+    const origStartStr = formEl ? formEl.getAttribute('data-orig-start') : '';
+    const origEndStr = formEl ? formEl.getAttribute('data-orig-end') : '';
+
+    window.shiftRescheduleDays = function(days) {
+        const startInput = document.getElementById('id_new_start_time');
+        const endInput = document.getElementById('id_new_end_time');
+        if (!startInput || !endInput) return;
+
+        const baseStart = origStartStr ? new Date(origStartStr) : new Date();
+        const baseEnd = origEndStr ? new Date(origEndStr) : new Date(baseStart.getTime() + 2 * 3600000);
+
+        const newStart = new Date(baseStart.getTime() + days * 86400000);
+        const newEnd = new Date(baseEnd.getTime() + days * 86400000);
+
+        startInput.value = toLocalISOString(newStart);
+        endInput.value = toLocalISOString(newEnd);
+    };
+
+    window.setSlotWindow = function(startHour, endHour) {
+        const startInput = document.getElementById('id_new_start_time');
+        const endInput = document.getElementById('id_new_end_time');
+        if (!startInput || !endInput) return;
+
+        const base = startInput.value ? new Date(startInput.value) : (origStartStr ? new Date(origStartStr) : new Date());
+        base.setHours(startHour, 0, 0, 0);
+        const end = new Date(base);
+        end.setHours(endHour, 0, 0, 0);
+
+        startInput.value = toLocalISOString(base);
+        endInput.value = toLocalISOString(end);
+    };
+
+    window.setRescheduleReason = function(reason) {
+        const reasonInput = document.getElementById('id_reason');
+        if (reasonInput) {
+            reasonInput.value = reason;
+            reasonInput.focus();
+        }
+    };
+})();
+</script>
 {% endblock %}

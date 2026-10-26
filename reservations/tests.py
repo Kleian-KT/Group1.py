@@ -164,9 +164,24 @@ class ReservationValidationAndWorkflowTests(TestCase):
         e2 = self.base_time.replace(hour=12, minute=0, second=0, microsecond=0)
 
         r1 = submit_reservation(self.user_a, self.facility, 'First', 'P1', 20, s1, e1)
-        r2 = submit_reservation(self.user_b, self.facility, 'Second', 'P2', 20, s2, e2)
-
         approve_reservation(r1.id, self.admin)
+
+        # Submitting an overlapping reservation now immediately raises ValidationError
+        with self.assertRaises(ValidationError):
+            submit_reservation(self.user_b, self.facility, 'Second', 'P2', 20, s2, e2)
+
+        # Even if a reservation was previously created in pending status, it cannot be approved
+        r2 = Reservation.objects.create(
+            reference='RES-TEST-OVERLAP-2',
+            user=self.user_b,
+            facility=self.facility,
+            title='Second',
+            purpose='P2',
+            participant_count=20,
+            start_time=s2,
+            end_time=e2,
+            status=Reservation.STATUS_PENDING
+        )
 
         with self.assertRaises(ReservationConflictError):
             approve_reservation(r2.id, self.admin)
@@ -174,27 +189,17 @@ class ReservationValidationAndWorkflowTests(TestCase):
         r2.refresh_from_db()
         self.assertEqual(r2.status, Reservation.STATUS_PENDING) # Still valid pending
 
-    def test_pending_request_does_not_block_slot(self):
-        """Pending requests do not reserve slots. Either can be approved first."""
+    def test_pending_request_blocks_submission_slot(self):
+        """Pending requests immediately hold the slot to prevent conflicting submissions."""
         s = self.base_time.replace(hour=9, minute=0, second=0, microsecond=0)
         e = self.base_time.replace(hour=11, minute=0, second=0, microsecond=0)
 
         r1 = submit_reservation(self.user_a, self.facility, 'Event A', 'P', 20, s, e)
-        # Even though r1 is pending for [9, 11), submission for r2 is allowed
-        # (submission only checks active closures and approved bookings)
-        r2 = Reservation.objects.create(
-            reference='RES-TEST-PEND-2',
-            user=self.user_b,
-            facility=self.facility,
-            title='Event B',
-            purpose='P',
-            participant_count=20,
-            start_time=s,
-            end_time=e,
-            status=Reservation.STATUS_PENDING
-        )
         self.assertEqual(r1.status, Reservation.STATUS_PENDING)
-        self.assertEqual(r2.status, Reservation.STATUS_PENDING)
+
+        # Conflicting submission must be blocked immediately
+        with self.assertRaises(ValidationError):
+            submit_reservation(self.user_b, self.facility, 'Event B', 'P', 20, s, e)
 
     def test_closure_conflict_blocks_approval_and_submission(self):
         """Active closures prevent booking approvals and submissions."""
@@ -341,4 +346,58 @@ class ReservationValidationAndWorkflowTests(TestCase):
         })
         self.assertFalse(form.is_valid())
         self.assertIn('end_time', form.errors)
+
+    def test_calculate_facility_slots_and_generic_unavailable_status(self):
+        """calculate_facility_slots must label any booked or held slot strictly as 'Unavailable'."""
+        from reservations.services import calculate_facility_slots
+        current_tz = timezone.get_current_timezone()
+        now_local = timezone.localtime(timezone.now())
+        target_date = (now_local + datetime.timedelta(days=3)).date()
+
+        # Before booking: 9:00 - 10:00 slot is available
+        data_before = calculate_facility_slots(self.facility, target_date)
+        slot_9_10 = next(s for s in data_before['slots'] if s['start_time'] == '09:00')
+        self.assertTrue(slot_9_10['is_available'])
+        self.assertEqual(slot_9_10['reason'], 'Available')
+
+        # User submits reservation for 9:00 - 11:00 local time (pending hold)
+        s = timezone.make_aware(datetime.datetime.combine(target_date, datetime.time(9, 0)), current_tz)
+        e = timezone.make_aware(datetime.datetime.combine(target_date, datetime.time(11, 0)), current_tz)
+        res = submit_reservation(self.user_a, self.facility, 'Hold Test', 'Purpose', 20, s, e)
+
+        # Slots 9:00-10:00 and 10:00-11:00 must now show is_available=False and reason='Unavailable'
+        data_after = calculate_facility_slots(self.facility, target_date)
+        slot_9_10_after = next(s for s in data_after['slots'] if s['start_time'] == '09:00')
+        slot_10_11_after = next(s for s in data_after['slots'] if s['start_time'] == '10:00')
+        slot_11_12_after = next(s for s in data_after['slots'] if s['start_time'] == '11:00')
+
+        self.assertFalse(slot_9_10_after['is_available'])
+        self.assertEqual(slot_9_10_after['reason'], 'Unavailable')
+        self.assertFalse(slot_10_11_after['is_available'])
+        self.assertEqual(slot_10_11_after['reason'], 'Unavailable')
+        self.assertTrue(slot_11_12_after['is_available'])
+        self.assertEqual(slot_11_12_after['reason'], 'Available')
+
+        # Cancel reservation -> slot becomes available again
+        cancel_reservation_by_user(res.id, self.user_a)
+        data_released = calculate_facility_slots(self.facility, target_date)
+        slot_9_10_rel = next(s for s in data_released['slots'] if s['start_time'] == '09:00')
+        self.assertTrue(slot_9_10_rel['is_available'])
+        self.assertEqual(slot_9_10_rel['reason'], 'Available')
+
+    def test_api_facility_availability_endpoint(self):
+        """API endpoint /portal/api/availability/ must return 200 OK with slots."""
+        from django.test import Client
+        client = Client()
+        client.force_login(self.user_a)
+        now_local = timezone.localtime(timezone.now())
+        target_date = (now_local + datetime.timedelta(days=3)).strftime('%Y-%m-%d')
+        response = client.get(f'/portal/api/availability/?facility_id={self.facility.id}&date={target_date}')
+        self.assertEqual(response.status_code, 200)
+        json_data = response.json()
+        self.assertIn('slots', json_data)
+        self.assertIn('facility', json_data)
+        self.assertEqual(json_data['facility']['id'], self.facility.id)
+        self.assertGreater(len(json_data['slots']), 0)
+
 

@@ -29,7 +29,7 @@ def admin_reports(request):
     facility_id = request.GET.get('facility', '').strip()
     status_filter = request.GET.get('status', '').strip()
 
-    now = timezone.now()
+    now = timezone.localtime(timezone.now())
     # Default to past 30 days if not specified
     if start_date_str:
         try:
@@ -134,7 +134,7 @@ def admin_reports_export_csv(request):
     facility_id = request.GET.get('facility', '').strip()
     status_filter = request.GET.get('status', '').strip()
 
-    now = timezone.now()
+    now = timezone.localtime(timezone.now())
     if start_date_str:
         try:
             start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()

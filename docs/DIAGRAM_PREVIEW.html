@@ -19,7 +19,7 @@
         tertiaryColor: '#F8FAFC'
       },
       flowchart: {
-        curve: 'basis',
+        curve: 'linear',
         htmlLabels: true
       },
       er: {
@@ -144,6 +144,75 @@ flowchart TD
     Services -->|"9. Validated Outcomes & State"| View
     View -->|"10. Context Dictionary"| Templates
     Templates -->|"11. Server-Rendered HTML5 Response"| Client
+        </div>
+      </div>
+    </section>
+
+    <!-- Diagram 3.2-A: Simplified System Architecture -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded uppercase tracking-wider">Recommended for Defense</span>
+            <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">Section 3.2-A</span>
+          </div>
+          <h2 class="text-xl font-bold text-slate-900 mt-1">Simplified System Architecture (Three-Tier Overview)</h2>
+          <p class="text-xs text-slate-500 mt-0.5">High-clarity executive overview showing Presentation, Security Gateway, Dual Subsystems (75% Admin vs 25% User Portal), and Persistence.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="downloadSvg('diagram-3-2-simplified', '3.2_simplified_system_architecture.svg')" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-1.5">
+            <span>⬇️</span> Download SVG (Drag to Lucidchart)
+          </button>
+        </div>
+      </div>
+      <div id="diagram-3-2-simplified" class="p-6 overflow-x-auto bg-slate-50/50 flex justify-center">
+        <div class="mermaid w-full max-w-3xl">
+flowchart TB
+    %% Tier 1: Presentation Layer
+    subgraph T1 ["Tier 1: Presentation Layer (Client Devices)"]
+        direction LR
+        U["👤 Basic User<br/>(Students & Faculty)"]
+        A["🛡️ Administrator<br/>(PFLMO Operations Staff)"]
+    end
+
+    %% Tier 2: Application Layer
+    subgraph T2 ["Tier 2: Application & Business Logic Layer (Python / Django)"]
+        direction TB
+
+        subgraph IngressLayer ["Security & Ingress Boundary"]
+            direction LR
+            GATE_U["User Security Gate<br/>• Session Auth & CSRF<br/>• ActiveUser Middleware"]
+            GATE_A["Admin Security Gate<br/>• Role Guard (@admin_required)<br/>• ActiveUser Middleware"]
+        end
+
+        subgraph Subsystems ["Dual Subsystems (0% Built-in Django Admin)"]
+            direction LR
+            UP["🌐 User Discovery Portal (/portal/)<br/><b>[25% Project Scope]</b><br/>• Facility Catalog & Live Slots<br/>• Request Booking & Own Tracker"]
+            AP["⚙️ Custom Admin Console (/manage/)<br/><b>[75% Project Scope]</b><br/>• Real-Time KPI Dashboard<br/>• Approvals & Rescheduling<br/>• Event Check-in, Slips & Audit"]
+        end
+
+        SERVICES["⚡ Central Domain Services & Concurrency Engine (services.py)<br/>• Half-Open Interval Algebra: [start, end) Overlap Theorem<br/>• Concurrency Lock: threading.Lock + select_for_update()<br/>• 7-State Lifecycle State Machine & Immutable Audit Trail"]
+    end
+
+    %% Tier 3: Persistence Layer
+    subgraph T3 ["Tier 3: Persistence & Data Layer"]
+        direction TB
+        ORM["Django Object-Relational Mapper (ORM)"]
+        DATABASE[("🗄️ Relational Database (SQLite / PostgreSQL)<br/>ACID Transactions & Strict Referential Integrity (models.PROTECT)")]
+    end
+
+    %% Parallel Non-Crossing Flows (Zero Intersections / Zero Overlaps)
+    U -->|"HTTP Request"| GATE_U
+    A -->|"HTTP Request"| GATE_A
+
+    GATE_U -->|"Role: BASIC_USER"| UP
+    GATE_A -->|"Role: ADMIN"| AP
+
+    UP -->|"Domain Service Call"| SERVICES
+    AP -->|"Domain Service Call"| SERVICES
+
+    SERVICES -->|"ORM Queries / Locks"| ORM
+    ORM <-->|"SQL Transactions"| DATABASE
         </div>
       </div>
     </section>

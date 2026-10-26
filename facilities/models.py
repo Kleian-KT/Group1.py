@@ -1,5 +1,7 @@
+import os
 import datetime
 from django.db import models
+from django.conf import settings
 
 
 class FacilityCategory(models.Model):
@@ -31,6 +33,7 @@ class Facility(models.Model):
     default_close_time = models.TimeField(default=datetime.time(21, 0), help_text="Default closing time")
     
     is_active = models.BooleanField(default=True, help_text="Active or archived status")
+    custom_image_url = models.URLField(max_length=500, blank=True, default='', help_text="Direct venue photo URL (optional)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -53,19 +56,55 @@ class Facility(models.Model):
         return (False, self.default_open_time, self.default_close_time)
 
     def get_image_url(self):
-        """Returns standard high-res venue photo according to facility code or category."""
+        """Returns authentic BulSU venue photo from static files, custom URL, or fallback."""
+        if self.custom_image_url:
+            return self.custom_image_url
+
+        code_lower = (self.code or '').lower().strip()
+        local_disk_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'facilities', f"{code_lower}.jpg")
+        if os.path.exists(local_disk_path):
+            return f"/static/img/facilities/{code_lower}.jpg"
+
         code_upper = (self.code or '').upper()
         cat_lower = (self.category.name or '').lower() if self.category else ''
 
-        if 'AUD' in code_upper or 'auditorium' in cat_lower:
-            return 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1000&q=80'
-        elif 'HALL' in code_upper or 'multipurpose' in cat_lower or 'activity' in cat_lower:
-            return 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1000&q=80'
-        elif 'LAB' in code_upper or 'laborator' in cat_lower:
-            return 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1000&q=80'
-        elif 'CONF' in code_upper or 'board' in cat_lower or 'conference' in cat_lower:
-            return 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1000&q=80'
-        return 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1000&q=80'
+        if 'VAL' in code_upper or 'GYM' in code_upper:
+            # Valencia Hall Gymnasium / Athletic Arena
+            return 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1200&q=80'
+        elif 'FED' in code_upper or ('AVR' in code_upper and 'ROX' not in code_upper):
+            # Federizo Hall Audio-Visual Theater
+            return 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80'
+        elif 'ELIB' in code_upper or 'LIB' in code_upper:
+            # BulSU E-Library Multimedia Conference Center
+            return 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1200&q=80'
+        elif 'CICT' in code_upper or 'LAB' in code_upper:
+            # CICT Advanced Computer & Software Lab
+            return 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80'
+        elif 'NAT' in code_upper or 'ENG' in code_upper:
+            # Natividad Hall Engineering Amphitheater
+            return 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80'
+        elif 'ALV' in code_upper or 'CIT' in code_upper:
+            # Alvarado Hall Function Hall
+            return 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
+        elif 'ROX' in code_upper or 'COED' in code_upper:
+            # Roxas Hall Audio-Visual Presentation Hall
+            return 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&w=1200&q=80'
+        elif 'SAC' in code_upper:
+            # Student Activity Center Grand Hall
+            return 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80'
+        elif 'HOST' in code_upper:
+            # University Hostel Grand Ballroom
+            return 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80'
+        elif 'FLR' in code_upper or 'CONF' in code_upper:
+            # Flores Hall Executive Boardroom
+            return 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80'
+        elif 'auditorium' in cat_lower or 'theater' in cat_lower:
+            return 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80'
+        elif 'multipurpose' in cat_lower or 'hall' in cat_lower:
+            return 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
+        elif 'laborator' in cat_lower:
+            return 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80'
+        return 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80'
 
     @property
     def image_url(self):
@@ -74,15 +113,27 @@ class Facility(models.Model):
     @property
     def badge_color(self):
         code_upper = (self.code or '').upper()
-        if 'AUD' in code_upper:
-            return 'bg-[#4a0808] text-white'
-        elif 'HALL' in code_upper:
-            return 'bg-[#904d00] text-white'
-        elif 'LAB' in code_upper:
+        if 'VAL' in code_upper or 'GYM' in code_upper:
+            return 'bg-[#6b1414] text-white' # BulSU Maroon
+        elif 'FED' in code_upper:
+            return 'bg-[#831843] text-white'
+        elif 'ELIB' in code_upper or 'LIB' in code_upper:
+            return 'bg-[#1e40af] text-white'
+        elif 'CICT' in code_upper or 'LAB' in code_upper:
             return 'bg-[#003e38] text-[#89f5e7]'
-        elif 'CONF' in code_upper:
+        elif 'NAT' in code_upper or 'ENG' in code_upper:
+            return 'bg-[#b45309] text-white' # Amber/Gold
+        elif 'ALV' in code_upper or 'CIT' in code_upper:
+            return 'bg-[#904d00] text-white'
+        elif 'ROX' in code_upper:
+            return 'bg-[#4c1d95] text-white'
+        elif 'SAC' in code_upper:
+            return 'bg-[#0f766e] text-white'
+        elif 'HOST' in code_upper:
+            return 'bg-[#4338ca] text-white'
+        elif 'FLR' in code_upper or 'CONF' in code_upper:
             return 'bg-[#1e293b] text-white'
-        return 'bg-[#4a0808] text-white'
+        return 'bg-[#6b1414] text-white'
 
 
 class FacilityOperatingHour(models.Model):

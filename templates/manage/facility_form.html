@@ -64,13 +64,45 @@
                 </div>
 
                 <div class="sm:col-span-6 space-y-1">
-                    <label class="block text-xs font-semibold text-slate-700">Participant Capacity <span class="text-rose-500">*</span></label>
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-slate-700">Participant Capacity <span class="text-rose-500">*</span></label>
+                        <!-- Quick capacity chips -->
+                        <div class="flex items-center gap-1">
+                            <button type="button" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setCapacity(30)">30</button>
+                            <button type="button" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setCapacity(50)">50</button>
+                            <button type="button" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setCapacity(100)">100</button>
+                            <button type="button" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setCapacity(250)">250</button>
+                            <button type="button" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setCapacity(500)">500</button>
+                        </div>
+                    </div>
                     {{ form.capacity }}
                 </div>
 
                 <div class="sm:col-span-12 space-y-1">
                     <label class="block text-xs font-semibold text-slate-700">Location / Building Details <span class="text-rose-500">*</span></label>
                     {{ form.location }}
+                </div>
+
+                <!-- One-click Operating Hours Presets -->
+                <div class="sm:col-span-12 space-y-1.5 pt-1">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-[11px] font-semibold text-slate-600">Baseline Operating Hours Presets</label>
+                        <span class="text-[10px] text-slate-400">1-click fill</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setDefaultHours('08:00', '17:00')">
+                            <span class="material-symbols-outlined text-[13px] text-amber-600">bolt</span>
+                            <span>Standard (08:00 – 17:00)</span>
+                        </button>
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setDefaultHours('08:00', '20:00')">
+                            <span class="material-symbols-outlined text-[13px] text-blue-600">dark_mode</span>
+                            <span>Extended (08:00 – 20:00)</span>
+                        </button>
+                        <button type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-2xs" onclick="setDefaultHours('07:00', '21:00')">
+                            <span class="material-symbols-outlined text-[13px] text-indigo-600">schedule</span>
+                            <span>Full Campus Day (07:00 – 21:00)</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="sm:col-span-6 space-y-1">
@@ -100,7 +132,7 @@
                 <a href="{% url 'admin_facility_list' %}" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 transition-colors shadow-sm">
                     Cancel
                 </a>
-                <button type="submit" class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-semibold shadow-sm transition-colors">
+                <button type="submit" class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#4b0004] text-white hover:bg-[#6b1414] text-xs font-bold shadow-sm transition-all">
                     <span class="material-symbols-outlined text-[16px]">save</span>
                     <span>Save Facility</span>
                 </button>
@@ -108,4 +140,17 @@
         </form>
     </div>
 </div>
+
+<script>
+window.setCapacity = function(val) {
+    const capInput = document.getElementById('id_capacity');
+    if (capInput) capInput.value = val;
+};
+window.setDefaultHours = function(openTime, closeTime) {
+    const openInput = document.getElementById('id_default_open_time');
+    const closeInput = document.getElementById('id_default_close_time');
+    if (openInput) openInput.value = openTime;
+    if (closeInput) closeInput.value = closeTime;
+};
+</script>
 {% endblock %}

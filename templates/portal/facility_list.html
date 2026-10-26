@@ -81,8 +81,8 @@
     {% for f in page_obj %}
         <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between overflow-hidden border border-slate-200/80">
             <div>
-                <!-- Top Photo Banner -->
-                <div class="relative h-52 w-full overflow-hidden bg-slate-900 rounded-t-xl group">
+                <!-- Top Photo Banner (Clickable to Facility Detail) -->
+                <a href="{% url 'user_facility_detail' facility_id=f.id %}" class="block relative h-52 w-full overflow-hidden bg-slate-900 rounded-t-xl group cursor-pointer" title="View details and schedule for {{ f.name }}">
                     <!-- Standard lazy-loaded image tag with high-res venue fallback -->
                     <img src="{{ f.image_url }}" 
                          alt="{{ f.name }}" 
@@ -102,9 +102,17 @@
                         </span>
                     </div>
 
+                    <!-- Top-Right "View Details" Pill -->
+                    <div class="absolute top-3 right-3 z-10 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-[11px] font-semibold border border-white/20 shadow-2xs">
+                            <span>Details</span>
+                            <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                        </span>
+                    </div>
+
                     <!-- Bottom Facility Title & Single Horizontal Metadata Row -->
                     <div class="absolute inset-x-0 bottom-0 p-4 pt-12 flex flex-col justify-end">
-                        <h2 class="text-xl font-bold text-white mb-1 drop-shadow-sm font-display leading-tight truncate">
+                        <h2 class="text-xl font-bold text-white mb-1 drop-shadow-sm font-display leading-tight truncate group-hover:text-amber-200 transition-colors">
                             {{ f.name }}
                         </h2>
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-200">
@@ -120,11 +128,11 @@
                             <span>&bull;</span>
                             <span class="flex items-center gap-1 font-mono">
                                 <span class="material-symbols-outlined text-[15px] text-amber-400">schedule</span>
-                                <span>{{ f.default_open_time|time:"H:i" }} &ndash; {{ f.default_close_time|time:"H:i" }} Daily</span>
+                                <span>{{ f.default_open_time|time:"g:i A" }} &ndash; {{ f.default_close_time|time:"g:i A" }} Daily</span>
                             </span>
                         </div>
                     </div>
-                </div>
+                </a>
 
                 <!-- Card Body: Description & Amenities & Slot Availability -->
                 <div class="p-5 flex flex-col">
@@ -185,20 +193,24 @@
                                     <div class="p-2 rounded bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
                                         <div class="flex flex-col">
                                             <span class="font-mono text-xs font-bold text-slate-800">
-                                                {{ slot.start_time|time:"H:i" }} &ndash; {{ slot.end_time|time:"H:i" }}
+                                                {% if slot.start_display and slot.end_display %}
+                                                    {{ slot.start_display }} &ndash; {{ slot.end_display }}
+                                                {% else %}
+                                                    {{ slot.start_time|time:"g:i A" }} &ndash; {{ slot.end_time|time:"g:i A" }}
+                                                {% endif %}
                                             </span>
                                             <span class="text-[11px] {% if slot.is_available %}text-emerald-700{% else %}text-slate-500{% endif %} font-medium flex items-center gap-1 mt-0.5">
                                                 {% if slot.is_available %}
                                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                                                     <span>Available</span>
                                                 {% else %}
-                                                    <span class="material-symbols-outlined text-[12px]">lock</span>
-                                                    <span>Unavailable &bull; {{ slot.reason }}</span>
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                    <span>Unavailable</span>
                                                 {% endif %}
                                             </span>
                                         </div>
                                         <span class="px-2 py-0.5 rounded text-[11px] font-bold {% if slot.is_available %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
-                                            {% if slot.is_available %}Open{% else %}Booked{% endif %}
+                                            {% if slot.is_available %}Open{% else %}Unavailable{% endif %}
                                         </span>
                                     </div>
                                 {% endfor %}
@@ -209,7 +221,7 @@
                                 <div class="p-2 rounded bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
                                     <div class="flex flex-col">
                                         <span class="font-mono text-xs font-bold text-slate-800">
-                                            {{ f.default_open_time|time:"H:i" }} &ndash; 12:00
+                                            {{ f.default_open_time|time:"g:i A" }} &ndash; 12:00 PM
                                         </span>
                                         <span class="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-0.5">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
@@ -223,7 +235,7 @@
                                 <div class="p-2 rounded bg-white border border-slate-200/80 flex items-center justify-between shadow-2xs">
                                     <div class="flex flex-col">
                                         <span class="font-mono text-xs font-bold text-slate-800">
-                                            12:00 &ndash; {{ f.default_close_time|time:"H:i" }}
+                                            12:00 PM &ndash; {{ f.default_close_time|time:"g:i A" }}
                                         </span>
                                         <span class="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-0.5">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
@@ -240,12 +252,17 @@
                 </div>
             </div>
 
-            <!-- Card Footer: Full-Width BulSU Maroon Request Reservation Button -->
-            <div class="p-5 pt-0">
+            <!-- Card Footer: Paired Actions (Facility Details & Book Venue) -->
+            <div class="p-5 pt-0 flex items-center gap-2.5">
+                <a href="{% url 'user_facility_detail' facility_id=f.id %}" 
+                   class="flex-1 py-2.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-800 font-semibold text-xs transition-colors shadow-2xs border border-slate-300 flex items-center justify-center gap-1.5 text-center">
+                    <span class="material-symbols-outlined text-[16px]">visibility</span>
+                    <span>Facility Details</span>
+                </a>
                 <a href="{% url 'user_reservation_create' %}?facility={{ f.id }}" 
-                   class="w-full py-2.5 px-4 rounded-lg bg-[#6b1111] hover:bg-[#520c0c] text-white font-semibold text-xs transition-colors shadow-sm flex items-center justify-center gap-2 text-center">
+                   class="flex-1 py-2.5 px-3 rounded-lg bg-[#4a0808] hover:bg-[#6b1414] text-white font-semibold text-xs transition-colors shadow-2xs flex items-center justify-center gap-1.5 text-center">
                     <span class="material-symbols-outlined text-[16px]">bookmark_add</span>
-                    <span>Request Reservation</span>
+                    <span>Book Venue</span>
                 </a>
             </div>
         </div>
