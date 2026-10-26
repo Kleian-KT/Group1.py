@@ -5,116 +5,650 @@
 {% block page_subtitle %}Visual master calendar of campus facility bookings, events, and maintenance closures.{% endblock %}
 
 {% block admin_content %}
-<!-- Calendar Controls & Filters strictly matching Stitch -->
-<div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/80 mb-6">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <!-- Date Navigation -->
-        <div class="flex items-center gap-3">
-            <div class="inline-flex rounded-lg border border-slate-300 shadow-2xs overflow-hidden">
-                <a href="?view={{ view_type }}&facility={{ facility_id }}&date={{ prev_date }}" class="p-2 bg-white hover:bg-slate-50 text-slate-700 transition-colors border-r border-slate-200 flex items-center justify-center" title="Previous">
-                    <span class="material-symbols-outlined text-[18px]">chevron_left</span>
-                </a>
-                <a href="?view={{ view_type }}&facility={{ facility_id }}" class="px-3 py-2 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors border-r border-slate-200 flex items-center justify-center">
-                    Today
-                </a>
-                <a href="?view={{ view_type }}&facility={{ facility_id }}&date={{ next_date }}" class="p-2 bg-white hover:bg-slate-50 text-slate-700 transition-colors flex items-center justify-center" title="Next">
-                    <span class="material-symbols-outlined text-[18px]">chevron_right</span>
-                </a>
-            </div>
-            <h3 class="text-base font-bold text-slate-900 font-display mb-0">{{ period_title }}</h3>
-        </div>
+<!-- Main Calendar Container -->
+<div class="space-y-5" role="region" aria-label="Master Facility Schedule">
 
-        <!-- View Switcher -->
-        <div class="inline-flex rounded-lg border border-slate-300 shadow-2xs overflow-hidden p-0.5 bg-slate-100">
-            <a href="?view=day&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" class="px-3 py-1.5 text-xs font-semibold rounded-md transition-colors {% if view_type == 'day' %}bg-white text-slate-900 shadow-xs{% else %}text-slate-600 hover:text-slate-900{% endif %}">
-                Day View
-            </a>
-            <a href="?view=week&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" class="px-3 py-1.5 text-xs font-semibold rounded-md transition-colors {% if view_type == 'week' %}bg-white text-slate-900 shadow-xs{% else %}text-slate-600 hover:text-slate-900{% endif %}">
-                Week View
-            </a>
-        </div>
-
-        <!-- Facility Filter -->
-        <div class="w-full md:w-72">
-            <form method="get" class="flex gap-2">
-                <input type="hidden" name="view" value="{{ view_type }}">
-                <input type="hidden" name="date" value="{{ curr_date|date:'Y-m-d' }}">
-                <select name="facility" class="block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all" onchange="this.form.submit()">
-                    <option value="">All Facilities</option>
-                    {% for f in facilities %}
-                        <option value="{{ f.id }}" {% if facility_id == f.id|stringformat:"s" %}selected{% endif %}>
-                            {{ f.code }} - {{ f.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-                {% if facility_id %}
-                    <a href="?view={{ view_type }}&date={{ curr_date|date:'Y-m-d' }}" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center" title="Clear filter">
-                        <span class="material-symbols-outlined text-[16px]">close</span>
+    <!-- Top Controls & Filters Card -->
+    <div class="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-200/80">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            <!-- Date Navigation & Period Title -->
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="inline-flex rounded-lg border border-slate-300 shadow-2xs overflow-hidden bg-white" role="group" aria-label="Date navigation">
+                    <a href="?view={{ view_type }}&facility={{ facility_id }}&date={{ prev_date }}" 
+                       class="p-2 hover:bg-slate-100 text-slate-700 transition-colors border-r border-slate-200 flex items-center justify-center focus:outline-none focus:bg-slate-100" 
+                       title="Previous period ({{ prev_date }})"
+                       aria-label="Previous period">
+                        <span class="material-symbols-outlined text-[18px]">chevron_left</span>
                     </a>
+                    <a href="?view={{ view_type }}&facility={{ facility_id }}&date={{ today|date:'Y-m-d' }}" 
+                       class="px-3.5 py-2 hover:bg-slate-100 text-xs font-bold text-slate-800 transition-colors border-r border-slate-200 flex items-center justify-center focus:outline-none focus:bg-slate-100"
+                       title="Jump to today ({{ today|date:'M d, Y' }})"
+                       aria-label="Jump to current date">
+                        Today
+                    </a>
+                    <a href="?view={{ view_type }}&facility={{ facility_id }}&date={{ next_date }}" 
+                       class="p-2 hover:bg-slate-100 text-slate-700 transition-colors flex items-center justify-center focus:outline-none focus:bg-slate-100" 
+                       title="Next period ({{ next_date }})"
+                       aria-label="Next period">
+                        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <h3 class="text-lg font-bold text-slate-900 font-display tracking-tight mb-0">
+                        {{ period_title }}
+                    </h3>
+                    {% if curr_date == today %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#4a0808]/10 text-[#4a0808] border border-[#4a0808]/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#4a0808]"></span>
+                            <span>Today</span>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- View Switcher, Jump-to-Date & Facility Filter -->
+            <div class="flex flex-wrap items-center gap-3">
+                
+                <!-- Specific Date Selector ("Jump to date") -->
+                <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-[#4a0808] focus-within:border-[#4a0808] transition-all shadow-2xs">
+                    <label for="calendar-jump-date" class="text-xs font-semibold text-slate-700 flex items-center gap-1 cursor-pointer">
+                        <span class="material-symbols-outlined text-[17px] text-slate-500">calendar_month</span>
+                        <span class="hidden sm:inline">Go to date:</span>
+                    </label>
+                    <input type="date" 
+                           id="calendar-jump-date" 
+                           name="date"
+                           value="{{ curr_date|date:'Y-m-d' }}" 
+                           class="bg-transparent text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
+                           title="Jump to specific date"
+                           aria-label="Jump to specific date"
+                           onchange="jumpToCalendarDate(this.value)">
+                </div>
+
+                <!-- View Switcher Tabs (Day, Week, Month) -->
+                <div class="inline-flex rounded-lg border border-slate-300 p-1 bg-slate-100 shadow-2xs" role="tablist" aria-label="Calendar view switcher">
+                    <a href="?view=day&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" 
+                       role="tab"
+                       aria-selected="{% if view_type == 'day' %}true{% else %}false{% endif %}"
+                       class="px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 {% if view_type == 'day' %}bg-white text-[#4a0808] shadow-xs font-extrabold{% else %}text-slate-600 hover:text-slate-900{% endif %}"
+                       title="View detailed single-day agenda">
+                        <span class="material-symbols-outlined text-[15px]">view_day</span>
+                        <span>Day</span>
+                    </a>
+                    <a href="?view=week&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" 
+                       role="tab"
+                       aria-selected="{% if view_type == 'week' %}true{% else %}false{% endif %}"
+                       class="px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 {% if view_type == 'week' %}bg-white text-[#4a0808] shadow-xs font-extrabold{% else %}text-slate-600 hover:text-slate-900{% endif %}"
+                       title="View 7-day weekly calendar">
+                        <span class="material-symbols-outlined text-[15px]">view_week</span>
+                        <span>Week</span>
+                    </a>
+                    <a href="?view=month&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" 
+                       role="tab"
+                       aria-selected="{% if view_type == 'month' %}true{% else %}false{% endif %}"
+                       class="px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 {% if view_type == 'month' %}bg-white text-[#4a0808] shadow-xs font-extrabold{% else %}text-slate-600 hover:text-slate-900{% endif %}"
+                       title="View monthly calendar grid">
+                        <span class="material-symbols-outlined text-[15px]">calendar_view_month</span>
+                        <span>Month</span>
+                    </a>
+                </div>
+
+                <!-- Facility Filter Dropdown -->
+                <div class="w-full sm:w-auto min-w-[200px]">
+                    <form method="get" class="flex gap-1.5">
+                        <input type="hidden" name="view" value="{{ view_type }}">
+                        <input type="hidden" name="date" value="{{ curr_date|date:'Y-m-d' }}">
+                        <div class="relative w-full">
+                            <label for="calendar-facility-filter" class="sr-only">Filter by facility</label>
+                            <select id="calendar-facility-filter"
+                                    name="facility" 
+                                    class="block w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4a0808] focus:border-[#4a0808] shadow-2xs transition-all appearance-none cursor-pointer" 
+                                    onchange="this.form.submit()">
+                                <option value="">All Facilities ({{ facilities.count }})</option>
+                                {% for f in facilities %}
+                                    <option value="{{ f.id }}" {% if facility_id == f.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ f.code }} &bull; {{ f.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <span class="material-symbols-outlined text-[18px] text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
+                        </div>
+                        {% if facility_id %}
+                            <a href="?view={{ view_type }}&date={{ curr_date|date:'Y-m-d' }}" 
+                               class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center justify-center border border-slate-300 shadow-2xs" 
+                               title="Clear facility filter"
+                               aria-label="Clear facility filter">
+                                <span class="material-symbols-outlined text-[16px]">close</span>
+                            </a>
+                        {% endif %}
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Accessible Legend & Range Stats Bar -->
+        <div class="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <!-- Quick Summary Badges -->
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-slate-500 font-medium">In this period:</span>
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-bold border border-slate-200">
+                    <span class="material-symbols-outlined text-[14px] text-slate-600">event</span>
+                    <span>{{ total_reservations }} Bookings</span>
+                </span>
+                {% if pending_count %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold border border-amber-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                        <span>{{ pending_count }} Pending</span>
+                    </span>
                 {% endif %}
-            </form>
+                {% if approved_count %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 font-bold border border-blue-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                        <span>{{ approved_count }} Approved</span>
+                    </span>
+                {% endif %}
+                {% if total_closures %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 font-bold border border-rose-300">
+                        <span class="material-symbols-outlined text-[13px] text-rose-700">block</span>
+                        <span>{{ total_closures }} Closures</span>
+                    </span>
+                {% endif %}
+            </div>
+
+            <!-- Status Color Legend for Accessibility -->
+            <div class="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-slate-600">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-sm bg-amber-400 border border-amber-500"></span>
+                    <span>Pending</span>
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-sm bg-blue-500 border border-blue-600"></span>
+                    <span>Approved</span>
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-sm bg-emerald-500 border border-emerald-600"></span>
+                    <span>Completed</span>
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-sm bg-rose-500 border border-rose-600"></span>
+                    <span>Maintenance Closure</span>
+                </span>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Calendar Board -->
-<div class="grid grid-cols-1 {% if view_type == 'day' %}grid-cols-1{% else %}sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7{% endif %} gap-4">
-    {% for day in date_days %}
-        <div class="bg-white rounded-xl shadow-sm border {% if day == today %}border-[#6b1414] ring-2 ring-[#6b1414]/20{% else %}border-slate-200/80{% endif %} flex flex-col h-full overflow-hidden">
-            <div class="py-2.5 px-3.5 flex items-center justify-between border-b {% if day == today %}bg-[#6b1414]/10 border-[#6b1414]/30{% else %}bg-slate-50/70 border-slate-100{% endif %}">
-                <div>
-                    <span class="font-bold text-xs {% if day == today %}text-[#6b1414]{% else %}text-slate-900{% endif %} font-display block">{{ day|date:"l" }}</span>
-                    <span class="text-[11px] text-slate-500 font-mono">{{ day|date:"M d" }}</span>
-                </div>
-                {% if day == today %}
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#6b1414] text-white">Today</span>
-                {% endif %}
+
+    {# ============================================================== #}
+    {# 1. MONTH VIEW                                                  #}
+    {# ============================================================== #}
+    {% if view_type == 'month' %}
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <!-- Month Header Row: Day Names -->
+            <div class="grid grid-cols-7 border-b border-slate-200 bg-slate-50/80 text-center font-bold text-xs uppercase tracking-wider text-slate-700 py-3">
+                <div><span class="hidden sm:inline">Monday</span><span class="sm:hidden">Mon</span></div>
+                <div><span class="hidden sm:inline">Tuesday</span><span class="sm:hidden">Tue</span></div>
+                <div><span class="hidden sm:inline">Wednesday</span><span class="sm:hidden">Wed</span></div>
+                <div><span class="hidden sm:inline">Thursday</span><span class="sm:hidden">Thu</span></div>
+                <div><span class="hidden sm:inline">Friday</span><span class="sm:hidden">Fri</span></div>
+                <div><span class="hidden sm:inline">Saturday</span><span class="sm:hidden">Sat</span></div>
+                <div><span class="hidden sm:inline">Sunday</span><span class="sm:hidden">Sun</span></div>
             </div>
 
-            <div class="p-2.5 space-y-2 flex-grow overflow-y-auto min-h-[220px] max-h-[500px]">
-                <!-- Closures on this Day -->
-                {% for c in closures %}
-                    {% if c.start_time.date <= day and c.end_time.date >= day %}
-                        <div class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
-                            <div class="font-bold flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[14px]">block</span>
-                                <span>Closure: {{ c.facility.code }}</span>
-                            </div>
-                            <div class="font-mono text-[11px] text-slate-700 mt-0.5">{{ c.start_time|time:"H:i" }} – {{ c.end_time|time:"H:i" }}</div>
-                            <div class="text-[10px] text-slate-500 truncate mt-0.5">{{ c.reason|truncatechars:32 }}</div>
-                        </div>
-                    {% endif %}
-                {% endfor %}
-
-                <!-- Bookings on this Day -->
-                {% for r in reservations %}
-                    {% if r.start_time.date == day %}
-                        <div class="p-2.5 rounded-lg border border-slate-200 bg-white hover:border-slate-300 transition-all text-xs shadow-2xs space-y-1">
-                            <div class="flex items-center justify-between">
-                                <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-bold">{{ r.reference }}</span>
-                                {% if r.status == 'APPROVED' %}
-                                    <span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-blue-50 text-blue-700">APPROVED</span>
-                                {% elif r.status == 'COMPLETED' %}
-                                    <span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700">COMPLETED</span>
-                                {% else %}
-                                    <span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700">{{ r.get_status_display }}</span>
+            <!-- Month Calendar Grid (35 or 42 cells) -->
+            <div class="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-slate-200 bg-slate-200">
+                {% for day in days_data %}
+                    <div class="min-h-[110px] md:min-h-[135px] p-2 flex flex-col justify-between transition-colors {% if not day.is_current_month %}bg-slate-50/70 text-slate-400{% elif day.is_today %}bg-[#4a0808]/[0.03] ring-2 ring-inset ring-[#4a0808]/40 text-slate-900{% else %}bg-white text-slate-800 hover:bg-slate-50/50{% endif %}">
+                        
+                        <!-- Top Cell Header: Date Number & Badge -->
+                        <div class="flex items-center justify-between pb-1.5 mb-1 border-b {% if day.is_today %}border-[#4a0808]/20{% else %}border-slate-100{% endif %}">
+                            <a href="?view=day&facility={{ facility_id }}&date={{ day.date|date:'Y-m-d' }}" 
+                               class="inline-flex items-center justify-center font-mono font-bold text-xs rounded-full w-6 h-6 transition-all {% if day.is_today %}bg-[#4a0808] text-white shadow-xs{% elif day.is_current_month %}text-slate-800 hover:bg-slate-200{% else %}text-slate-400 hover:bg-slate-200{% endif %}"
+                               title="Click to view detailed agenda for {{ day.date|date:'F d, Y' }}"
+                               aria-label="View day schedule for {{ day.date|date:'F d, Y' }}">
+                                {{ day.day_number }}
+                            </a>
+                            
+                            <div class="flex items-center gap-1">
+                                {% if day.is_today %}
+                                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-[#4a0808] text-white tracking-wider">Today</span>
+                                {% endif %}
+                                {% if day.total_items > 0 %}
+                                    <span class="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded font-mono" title="{{ day.total_items }} scheduled items">
+                                        {{ day.total_items }}
+                                    </span>
                                 {% endif %}
                             </div>
-                            <div class="font-bold text-slate-900 text-xs truncate">{{ r.title }}</div>
-                            <div class="text-[11px] text-slate-500 font-mono">
-                                {{ r.facility.code }} &bull; {{ r.start_time|time:"H:i" }}–{{ r.end_time|time:"H:i" }}
+                        </div>
+
+                        <!-- Cell Events Stack -->
+                        <div class="space-y-1 overflow-y-auto flex-grow max-h-[85px] md:max-h-[105px] pr-0.5">
+                            
+                            <!-- Closures in Month Cell -->
+                            {% for c in day.closures %}
+                                <a href="{% url 'admin_closure_list' %}" 
+                                   class="block px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-950 border border-rose-300 hover:bg-rose-200 truncate transition-colors"
+                                   title="Closure: {{ c.facility.code }} ({{ c.time_display }}) - {{ c.reason }}">
+                                    <span class="material-symbols-outlined text-[11px] align-middle text-rose-700">block</span>
+                                    <span>Closed: {{ c.facility.code }}</span>
+                                </a>
+                            {% endfor %}
+
+                            <!-- Reservations in Month Cell -->
+                            {% for r in day.reservations|slice:":2" %}
+                                <a href="{% url 'admin_reservation_detail' reservation_id=r.id %}" 
+                                   class="block px-1.5 py-1 rounded text-[10px] font-medium border truncate transition-all {% if r.status == 'APPROVED' %}bg-blue-50 text-blue-950 border-blue-300 hover:bg-blue-100{% elif r.status == 'PENDING' %}bg-amber-50 text-amber-950 border-amber-300 hover:bg-amber-100{% elif r.status == 'COMPLETED' %}bg-emerald-50 text-emerald-950 border-emerald-300 hover:bg-emerald-100{% else %}bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200{% endif %}"
+                                   title="{{ r.reference }}: {{ r.title }} &bull; {{ r.facility.code }} &bull; {{ r.time_display }}">
+                                    <div class="flex items-center gap-1 font-bold">
+                                        <span class="w-1.5 h-1.5 rounded-full {% if r.status == 'APPROVED' %}bg-blue-600{% elif r.status == 'PENDING' %}bg-amber-600{% elif r.status == 'COMPLETED' %}bg-emerald-600{% else %}bg-slate-600{% endif %}"></span>
+                                        <span class="font-mono text-[9px]">{{ r.start_time_display }}</span>
+                                        <span class="truncate font-semibold text-slate-900">{{ r.title }}</span>
+                                    </div>
+                                </a>
+                            {% endfor %}
+
+                            <!-- Overflow Pill (+X more) -->
+                            {% if day.reservations|length > 2 %}
+                                <a href="?view=day&facility={{ facility_id }}&date={{ day.date|date:'Y-m-d' }}" 
+                                   class="block text-center text-[10px] font-bold text-[#4a0808] hover:text-[#6b1414] hover:underline pt-0.5"
+                                   title="Click to see all {{ day.total_items }} events on this day">
+                                    +{{ day.reservations|length|add:"-2" }} more &rarr;
+                                </a>
+                            {% endif %}
+                        </div>
+
+                        <!-- Cell Footer: Click to inspect day -->
+                        <div class="pt-1 mt-auto text-right">
+                            <a href="?view=day&facility={{ facility_id }}&date={{ day.date|date:'Y-m-d' }}" 
+                               class="text-[10px] font-semibold text-slate-500 hover:text-[#4a0808] inline-flex items-center gap-0.5"
+                               title="Inspect {{ day.date|date:'M d' }}">
+                                <span>Day agenda</span>
+                                <span class="material-symbols-outlined text-[11px]">arrow_forward</span>
+                            </a>
+                        </div>
+
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+
+    {# ============================================================== #}
+    {# 2. WEEK VIEW                                                   #}
+    {# ============================================================== #}
+    {% elif view_type == 'week' %}
+        <div class="overflow-x-auto pb-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3.5 min-w-[920px]">
+                {% for day in days_data %}
+                    <div class="bg-white rounded-xl shadow-sm border {% if day.is_today %}border-[#4a0808] ring-2 ring-[#4a0808]/30 shadow-md{% else %}border-slate-200/90{% endif %} flex flex-col h-full overflow-hidden transition-all"
+                         {% if day.is_today %}aria-current="date"{% endif %}>
+                        
+                        <!-- Column Header -->
+                        <div class="p-3 border-b flex items-center justify-between {% if day.is_today %}bg-[#4a0808] text-white{% else %}bg-slate-50 border-slate-200 text-slate-800{% endif %}">
+                            <div>
+                                <span class="font-extrabold text-xs uppercase tracking-wider block {% if day.is_today %}text-amber-200{% else %}text-slate-600{% endif %}">
+                                    {{ day.date|date:"l" }}
+                                </span>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span class="text-lg font-black font-display {% if day.is_today %}text-white{% else %}text-slate-900{% endif %}">
+                                        {{ day.date|date:"d" }}
+                                    </span>
+                                    <span class="text-xs font-semibold uppercase {% if day.is_today %}text-amber-100/90{% else %}text-slate-500{% endif %}">
+                                        {{ day.date|date:"M" }}
+                                    </span>
+                                </div>
                             </div>
-                            <div class="pt-1 flex justify-end">
-                                <a href="{% url 'admin_reservation_detail' reservation_id=r.id %}" class="inline-flex items-center gap-0.5 text-[11px] font-semibold text-bulsu-maroon hover:underline">
-                                    <span>Details</span>
+                            
+                            <div class="flex flex-col items-end gap-1">
+                                {% if day.is_today %}
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-400 text-slate-900 tracking-wider shadow-2xs">
+                                        Today
+                                    </span>
+                                {% endif %}
+                                <a href="?view=day&facility={{ facility_id }}&date={{ day.date|date:'Y-m-d' }}" 
+                                   class="text-[11px] font-bold inline-flex items-center gap-0.5 {% if day.is_today %}text-amber-200 hover:text-white hover:underline{% else %}text-[#4a0808] hover:text-[#6b1414] hover:underline{% endif %}"
+                                   title="Zoom into day view for {{ day.date|date:'M d, Y' }}">
+                                    <span>Day View</span>
                                     <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
                                 </a>
                             </div>
                         </div>
-                    {% endif %}
+
+                        <!-- Column Events Body -->
+                        <div class="p-2.5 space-y-2.5 flex-grow overflow-y-auto min-h-[300px] max-h-[560px] bg-slate-50/40">
+                            
+                            <!-- Closures on this Day -->
+                            {% for c in day.closures %}
+                                <div class="p-3 rounded-lg bg-rose-50 border border-rose-300 text-rose-950 text-xs shadow-2xs space-y-1">
+                                    <div class="font-bold flex items-center justify-between text-rose-900">
+                                        <span class="flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[15px] text-rose-700">block</span>
+                                            <span>Maintenance Closure</span>
+                                        </span>
+                                        <span class="font-mono text-[10px] px-1.5 py-0.2 rounded bg-rose-200 text-rose-900 font-bold">
+                                            {{ c.facility.code }}
+                                        </span>
+                                    </div>
+                                    <div class="font-mono text-[11px] font-semibold text-rose-900 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[13px]">schedule</span>
+                                        <span>{{ c.time_display }}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-700 leading-snug break-words">
+                                        {{ c.reason }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+
+                            <!-- Reservations on this Day -->
+                            {% for r in day.reservations %}
+                                <div class="p-3 rounded-lg border bg-white text-xs shadow-2xs space-y-1.5 transition-all hover:border-slate-400 hover:shadow-xs {% if r.status == 'APPROVED' %}border-blue-300/80{% elif r.status == 'PENDING' %}border-amber-300/80{% elif r.status == 'COMPLETED' %}border-emerald-300/80{% else %}border-slate-300{% endif %}">
+                                    
+                                    <!-- Badge Row: Reference & Status Pill -->
+                                    <div class="flex items-center justify-between gap-1">
+                                        <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                                            {{ r.reference }}
+                                        </span>
+
+                                        {% if r.status == 'APPROVED' %}
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                                <span>APPROVED</span>
+                                            </span>
+                                        {% elif r.status == 'COMPLETED' %}
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                <span>COMPLETED</span>
+                                            </span>
+                                        {% elif r.status == 'PENDING' %}
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                                                <span>PENDING</span>
+                                            </span>
+                                        {% elif r.status == 'REJECTED' %}
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                                <span>REJECTED</span>
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-300">
+                                                {{ r.get_status_display }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Event Title -->
+                                    <div class="font-bold text-slate-900 text-xs leading-snug line-clamp-2" title="{{ r.title }}">
+                                        {{ r.title }}
+                                    </div>
+
+                                    <!-- Meta: Facility & Human Readable Time -->
+                                    <div class="space-y-0.5 pt-0.5">
+                                        <div class="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[13px] text-slate-500">apartment</span>
+                                            <span>{{ r.facility.code }}</span>
+                                            <span class="text-slate-400 font-normal">&bull; {{ r.facility.name|truncatechars:18 }}</span>
+                                        </div>
+                                        <div class="text-[11px] font-mono font-medium text-slate-800 flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[13px] text-slate-500">schedule</span>
+                                            <span>{{ r.time_display }}</span>
+                                        </div>
+                                        {% if r.user %}
+                                            <div class="text-[10px] text-slate-500 flex items-center gap-1 truncate" title="Requested by {{ r.user.get_full_name|default:r.user.username }}">
+                                                <span class="material-symbols-outlined text-[12px] text-slate-400">person</span>
+                                                <span class="truncate">{{ r.user.get_full_name|default:r.user.username }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Action Button -->
+                                    <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between">
+                                        <span class="text-[10px] text-slate-400 font-medium">{{ r.participant_count }} pax</span>
+                                        <a href="{% url 'admin_reservation_detail' reservation_id=r.id %}" 
+                                           class="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#4a0808] hover:text-[#6b1414] hover:underline"
+                                           aria-label="View details for reservation {{ r.reference }}">
+                                            <span>Details</span>
+                                            <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+                                        </a>
+                                    </div>
+
+                                </div>
+                            {% endfor %}
+
+                            <!-- Empty Day State -->
+                            {% if not day.has_events %}
+                                <div class="h-44 flex flex-col items-center justify-center text-center p-3 text-slate-400 border border-dashed border-slate-200 rounded-lg bg-white/60">
+                                    <span class="material-symbols-outlined text-2xl text-slate-300 mb-1">event_available</span>
+                                    <span class="text-[11px] font-medium text-slate-500">No events scheduled</span>
+                                    <span class="text-[10px] text-slate-400 mt-0.5">Facility available for booking</span>
+                                </div>
+                            {% endif %}
+
+                        </div>
+
+                        <!-- Column Footer -->
+                        <div class="p-2 border-t border-slate-100 bg-white text-center">
+                            <span class="text-[10px] font-semibold text-slate-500">
+                                {{ day.total_items }} scheduled item{{ day.total_items|pluralize }}
+                            </span>
+                        </div>
+
+                    </div>
                 {% endfor %}
             </div>
         </div>
-    {% endfor %}
+
+
+    {# ============================================================== #}
+    {# 3. DAY VIEW                                                    #}
+    {# ============================================================== #}
+    {% elif view_type == 'day' %}
+        <div class="space-y-4">
+            
+            <!-- Day Banner Header -->
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-[#4a0808] text-white flex flex-col items-center justify-center font-bold shadow-xs">
+                        <span class="text-[10px] uppercase tracking-wider text-amber-200 leading-none">{{ curr_date|date:"M" }}</span>
+                        <span class="text-xl font-black font-display leading-tight">{{ curr_date|date:"d" }}</span>
+                    </div>
+                    <div>
+                        <h4 class="text-base sm:text-lg font-bold text-slate-900 font-display">
+                            {{ curr_date|date:"l, F d, Y" }}
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Detailed master agenda and real-time operational breakdown
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'admin_closure_list' %}" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200 shadow-2xs">
+                        <span class="material-symbols-outlined text-[16px] text-rose-600">block</span>
+                        <span>Manage Closures</span>
+                    </a>
+                    <a href="?view=week&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors border border-slate-300 shadow-2xs">
+                        <span class="material-symbols-outlined text-[16px]">view_week</span>
+                        <span>Switch to Week</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Single Day Agenda List -->
+            {% with day=days_data.0 %}
+                {% if day.has_events %}
+                    <div class="space-y-3">
+                        
+                        <!-- Closures on this Day -->
+                        {% for c in day.closures %}
+                            <div class="bg-rose-50 border border-rose-300 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 border border-rose-200">
+                                        <span class="material-symbols-outlined text-2xl">block</span>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-black uppercase px-2 py-0.5 rounded bg-rose-200 text-rose-900 font-mono">
+                                                {{ c.facility.code }}
+                                            </span>
+                                            <span class="text-xs font-bold text-rose-950">Maintenance / Facility Closure</span>
+                                        </div>
+                                        <div class="font-mono text-xs font-bold text-rose-900 mt-1 flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[14px]">schedule</span>
+                                            <span>{{ c.time_display }}</span>
+                                        </div>
+                                        <p class="text-xs text-slate-700 mt-1 font-medium">
+                                            {{ c.reason }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <a href="{% url 'admin_closure_list' %}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-rose-900 border border-rose-300 text-xs font-semibold hover:bg-rose-100 transition-colors shadow-2xs">
+                                        <span>Manage Closure</span>
+                                        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                        <!-- Bookings on this Day -->
+                        <div class="space-y-3">
+                            {% for r in day.reservations %}
+                                <div class="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-200/90 hover:border-slate-300 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                    
+                                    <!-- Left Section: Time, Reference & Title -->
+                                    <div class="flex items-start gap-4">
+                                        <!-- Time Badge Box -->
+                                        <div class="w-24 sm:w-28 text-center p-2.5 rounded-lg bg-slate-50 border border-slate-200 shrink-0">
+                                            <span class="material-symbols-outlined text-base text-slate-500 block mb-0.5">schedule</span>
+                                            <div class="font-mono text-xs font-black text-slate-900">{{ r.start_time_display }}</div>
+                                            <div class="text-[10px] text-slate-400 font-mono">to {{ r.end_time_display }}</div>
+                                        </div>
+
+                                        <!-- Event Details -->
+                                        <div class="space-y-1.5">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                                                    {{ r.reference }}
+                                                </span>
+
+                                                {% if r.status == 'APPROVED' %}
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-300">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                                        <span>APPROVED</span>
+                                                    </span>
+                                                {% elif r.status == 'COMPLETED' %}
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                        <span>COMPLETED</span>
+                                                    </span>
+                                                {% elif r.status == 'PENDING' %}
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                                                        <span>PENDING APPROVAL</span>
+                                                    </span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300">
+                                                        {{ r.get_status_display }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+
+                                            <h5 class="text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                                                {{ r.title }}
+                                            </h5>
+
+                                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 font-medium">
+                                                <span class="flex items-center gap-1 font-semibold text-slate-800">
+                                                    <span class="material-symbols-outlined text-[15px] text-[#4a0808]">apartment</span>
+                                                    <span>{{ r.facility.code }} &bull; {{ r.facility.name }}</span>
+                                                </span>
+                                                <span class="flex items-center gap-1 text-slate-500">
+                                                    <span class="material-symbols-outlined text-[15px]">location_on</span>
+                                                    <span>{{ r.facility.location }}</span>
+                                                </span>
+                                                <span class="flex items-center gap-1 text-slate-500">
+                                                    <span class="material-symbols-outlined text-[15px]">groups</span>
+                                                    <span>{{ r.participant_count }} participants</span>
+                                                </span>
+                                                {% if r.user %}
+                                                    <span class="flex items-center gap-1 text-slate-500">
+                                                        <span class="material-symbols-outlined text-[15px]">person</span>
+                                                        <span>{{ r.user.get_full_name|default:r.user.username }}</span>
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+
+                                            {% if r.purpose %}
+                                                <p class="text-xs text-slate-500 pt-1 line-clamp-2 max-w-3xl">
+                                                    {{ r.purpose }}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Actions -->
+                                    <div class="flex sm:flex-col lg:flex-row items-center gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                                        {% if r.status == 'APPROVED' %}
+                                            <a href="{% url 'admin_event_print_slip' reservation_id=r.id %}" 
+                                               target="_blank"
+                                               class="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors border border-slate-200 shadow-2xs"
+                                               title="Print Confirmation Slip">
+                                                <span class="material-symbols-outlined text-[15px]">print</span>
+                                                <span class="hidden sm:inline">Slip</span>
+                                            </a>
+                                        {% endif %}
+                                        <a href="{% url 'admin_reservation_detail' reservation_id=r.id %}" 
+                                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#4a0808] hover:bg-[#6b1414] text-white text-xs font-bold shadow-2xs transition-colors">
+                                            <span>Review Details</span>
+                                            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                                        </a>
+                                    </div>
+
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                    </div>
+                {% else %}
+                    <!-- Friendly Empty State for Day -->
+                    <div class="bg-white rounded-xl p-10 shadow-sm border border-slate-200 text-center max-w-lg mx-auto my-6 space-y-3">
+                        <div class="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200">
+                            <span class="material-symbols-outlined text-3xl">event_available</span>
+                        </div>
+                        <h4 class="text-base font-bold text-slate-900 font-display">No Events Scheduled for this Day</h4>
+                        <p class="text-xs text-slate-500">
+                            There are currently no confirmed reservations, pending requests, or active maintenance closures registered on {{ curr_date|date:"l, F d, Y" }}.
+                        </p>
+                        <div class="pt-2 flex flex-wrap justify-center gap-2">
+                            <a href="?view=week&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" 
+                               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors border border-slate-300 shadow-2xs">
+                                <span class="material-symbols-outlined text-[16px]">view_week</span>
+                                <span>View Full Week</span>
+                            </a>
+                            <a href="?view=month&facility={{ facility_id }}&date={{ curr_date|date:'Y-m-d' }}" 
+                               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#4a0808] hover:bg-[#6b1414] text-white text-xs font-semibold transition-colors shadow-2xs">
+                                <span class="material-symbols-outlined text-[16px]">calendar_view_month</span>
+                                <span>View Month Grid</span>
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+        </div>
+    {% endif %}
+
 </div>
+
+<!-- Client-side helper for the Specific Date Jump input -->
+<script>
+function jumpToCalendarDate(dateVal) {
+    if (!dateVal) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('date', dateVal);
+    window.location.href = url.toString();
+}
+</script>
 {% endblock %}

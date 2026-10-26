@@ -114,7 +114,7 @@ def validate_reservation_times_and_rules(facility, start_time, end_time, partici
 
     # 6. Maximum advance booking window
     max_advance_days = SystemSetting.get_max_advance_days()
-    advance_limit = (now + datetime.timedelta(days=max_advance_days)).date()
+    advance_limit = timezone.localdate() + datetime.timedelta(days=max_advance_days)
     if is_submission and booking_date > advance_limit:
         errors.append(f"Reservation date exceeds maximum advance booking limit of {max_advance_days} days.")
 

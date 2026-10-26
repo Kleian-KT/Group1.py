@@ -304,18 +304,21 @@ def admin_reservation_cancel(request, reservation_id):
 
 @admin_required
 def admin_calendar(request):
-    view_type = request.GET.get('view', 'week').strip() # 'day' or 'week'
+    view_type = request.GET.get('view', 'week').strip().lower()
+    if view_type not in ['day', 'week', 'month']:
+        view_type = 'week'
+
     facility_id = request.GET.get('facility', '').strip()
     date_str = request.GET.get('date', '').strip()
 
-    now = timezone.now()
+    today = timezone.localdate()
     if date_str:
         try:
             curr_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
         except ValueError:
-            curr_date = now.date()
+            curr_date = today
     else:
-        curr_date = now.date()
+        curr_date = today
 
     if view_type == 'day':
         start_date = curr_date
@@ -323,20 +326,41 @@ def admin_calendar(request):
         prev_date = (curr_date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         next_date = (curr_date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         period_title = curr_date.strftime('%A, %B %d, %Y')
-    else:
-        # Week view: starting Monday of the current week
+    elif view_type == 'month':
+        month_start = curr_date.replace(day=1)
+        if curr_date.month == 1:
+            prev_month = curr_date.replace(year=curr_date.year - 1, month=12, day=1)
+        else:
+            prev_month = curr_date.replace(month=curr_date.month - 1, day=1)
+
+        if curr_date.month == 12:
+            next_month = curr_date.replace(year=curr_date.year + 1, month=1, day=1)
+        else:
+            next_month = curr_date.replace(month=curr_date.month + 1, day=1)
+
+        prev_date = prev_month.strftime('%Y-%m-%d')
+        next_date = next_month.strftime('%Y-%m-%d')
+        period_title = curr_date.strftime('%B %Y')
+
+        # Month boundary (grid starts on Monday, ends on Sunday)
+        month_end = next_month - datetime.timedelta(days=1)
+        grid_start = month_start - datetime.timedelta(days=month_start.weekday())
+        days_to_sunday = (6 - month_end.weekday()) % 7
+        grid_end = month_end + datetime.timedelta(days=days_to_sunday)
+        start_date = grid_start
+        end_date = grid_end
+    else: # week view
         start_date = curr_date - datetime.timedelta(days=curr_date.weekday())
         end_date = start_date + datetime.timedelta(days=6)
         prev_date = (start_date - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
         next_date = (start_date + datetime.timedelta(days=7)).strftime('%Y-%m-%d')
-        period_title = f"{start_date.strftime('%b %d')} - {end_date.strftime('%b %d, %Y')}"
-
-    # Build date list
-    date_days = []
-    tmp = start_date
-    while tmp <= end_date:
-        date_days.append(tmp)
-        tmp += datetime.timedelta(days=1)
+        if start_date.year == end_date.year:
+            if start_date.month == end_date.month:
+                period_title = f"{start_date.strftime('%b %d')} – {end_date.strftime('%d, %Y')}"
+            else:
+                period_title = f"{start_date.strftime('%b %d')} – {end_date.strftime('%b %d, %Y')}"
+        else:
+            period_title = f"{start_date.strftime('%b %d, %Y')} – {end_date.strftime('%b %d, %Y')}"
 
     start_dt = timezone.make_aware(datetime.datetime.combine(start_date, datetime.time.min))
     end_dt = timezone.make_aware(datetime.datetime.combine(end_date, datetime.time.max))
@@ -358,6 +382,58 @@ def admin_calendar(request):
 
     facilities = Facility.objects.all().order_by('name')
 
+    # Pre-process reservations & closures with localized timezone timestamps
+    res_list = list(reservations_qs)
+    closure_list = list(closures_qs)
+
+    for r in res_list:
+        local_st = timezone.localtime(r.start_time)
+        local_et = timezone.localtime(r.end_time)
+        r.local_date = local_st.date()
+        r.time_display = f"{local_st.strftime('%I:%M %p').lstrip('0')} – {local_et.strftime('%I:%M %p').lstrip('0')}"
+        r.start_time_display = local_st.strftime('%I:%M %p').lstrip('0')
+        r.end_time_display = local_et.strftime('%I:%M %p').lstrip('0')
+
+    for c in closure_list:
+        local_cst = timezone.localtime(c.start_time)
+        local_cet = timezone.localtime(c.end_time)
+        c.time_display = f"{local_cst.strftime('%I:%M %p').lstrip('0')} – {local_cet.strftime('%I:%M %p').lstrip('0')}"
+        c.start_time_display = local_cst.strftime('%I:%M %p').lstrip('0')
+        c.end_time_display = local_cet.strftime('%I:%M %p').lstrip('0')
+
+    # Construct days list with pre-filtered events
+    date_days = []
+    days_data = []
+    tmp = start_date
+    while tmp <= end_date:
+        date_days.append(tmp)
+        day_start_aware = timezone.make_aware(datetime.datetime.combine(tmp, datetime.time.min))
+        day_end_aware = timezone.make_aware(datetime.datetime.combine(tmp, datetime.time.max))
+
+        day_closures = [
+            c for c in closure_list
+            if c.start_time <= day_end_aware and c.end_time >= day_start_aware
+        ]
+        day_reservations = [
+            r for r in res_list
+            if r.local_date == tmp
+        ]
+
+        days_data.append({
+            'date': tmp,
+            'day_number': tmp.day,
+            'is_today': tmp == today,
+            'is_current_month': tmp.month == curr_date.month if view_type == 'month' else True,
+            'closures': day_closures,
+            'reservations': day_reservations,
+            'has_events': bool(day_closures or day_reservations),
+            'total_items': len(day_closures) + len(day_reservations),
+        })
+        tmp += datetime.timedelta(days=1)
+
+    pending_count = sum(1 for r in res_list if r.status == Reservation.STATUS_PENDING)
+    approved_count = sum(1 for r in res_list if r.status == Reservation.STATUS_APPROVED)
+
     return render(request, 'manage/calendar.html', {
         'view_type': view_type,
         'curr_date': curr_date,
@@ -365,12 +441,17 @@ def admin_calendar(request):
         'next_date': next_date,
         'period_title': period_title,
         'date_days': date_days,
+        'days_data': days_data,
         'reservations': reservations_qs,
         'closures': closures_qs,
         'facilities': facilities,
         'facility_id': facility_id,
-        'today': now.date(),
-        'active_menu': 'calendar'
+        'today': today,
+        'total_reservations': len(res_list),
+        'total_closures': len(closure_list),
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'active_menu': 'calendar',
     })
 
 
@@ -529,7 +610,7 @@ def user_reservation_create(request):
 
     max_duration = SystemSetting.get_max_duration_hours()
     max_advance = SystemSetting.get_max_advance_days()
-    today = timezone.now().date()
+    today = timezone.localdate()
     max_date = today + datetime.timedelta(days=max_advance)
     default_date = initial_date or (today + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
@@ -602,7 +683,7 @@ def api_facility_availability(request):
         except ValueError:
             return JsonResponse({'error': 'Invalid date format (expected YYYY-MM-DD).'}, status=400)
     else:
-        target_date = timezone.now().date()
+        target_date = timezone.localdate()
 
     availability_data = calculate_facility_slots(facility, target_date)
     open_t = availability_data.get('open_time')

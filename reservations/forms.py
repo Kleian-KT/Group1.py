@@ -79,7 +79,7 @@ class ReservationSubmissionForm(forms.ModelForm):
                         self.add_error('end_time', f"Requested duration ({duration_hours:.1f} hrs) exceeds the maximum limit of {max_duration_hours} hours.")
 
                     max_advance_days = SystemSetting.get_max_advance_days()
-                    advance_limit = (now + datetime.timedelta(days=max_advance_days)).date()
+                    advance_limit = timezone.localdate() + datetime.timedelta(days=max_advance_days)
                     if start.date() > advance_limit:
                         self.add_error('start_time', f"Reservation date exceeds maximum advance booking limit of {max_advance_days} days.")
 

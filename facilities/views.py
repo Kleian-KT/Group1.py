@@ -386,7 +386,7 @@ def user_facility_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     for facility in page_obj:
         preview_data = get_preview_slots_for_facility(facility, today)
         facility.today_slots = preview_data.get('slots', [])
@@ -415,9 +415,9 @@ def user_facility_detail(request, facility_id):
         try:
             selected_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
         except ValueError:
-            selected_date = timezone.now().date() + datetime.timedelta(days=1)
+            selected_date = timezone.localdate() + datetime.timedelta(days=1)
     else:
-        selected_date = timezone.now().date() + datetime.timedelta(days=1)
+        selected_date = timezone.localdate() + datetime.timedelta(days=1)
 
     availability_data = calculate_facility_slots(facility, selected_date)
 

@@ -400,4 +400,35 @@ class ReservationValidationAndWorkflowTests(TestCase):
         self.assertEqual(json_data['facility']['id'], self.facility.id)
         self.assertGreater(len(json_data['slots']), 0)
 
+    def test_admin_calendar_views_and_specific_date(self):
+        """Verify calendar views (day, week, month) and specific date rendering."""
+        from django.test import Client
+        client = Client()
+        client.force_login(self.admin)
+
+        # 1. Week view
+        resp_week = client.get('/manage/calendar/?view=week')
+        self.assertEqual(resp_week.status_code, 200)
+        self.assertEqual(resp_week.context['view_type'], 'week')
+        self.assertContains(resp_week, 'Week')
+
+        # 2. Month view
+        resp_month = client.get('/manage/calendar/?view=month')
+        self.assertEqual(resp_month.status_code, 200)
+        self.assertEqual(resp_month.context['view_type'], 'month')
+        self.assertContains(resp_month, 'Month')
+
+        # 3. Day view
+        resp_day = client.get('/manage/calendar/?view=day')
+        self.assertEqual(resp_day.status_code, 200)
+        self.assertEqual(resp_day.context['view_type'], 'day')
+        self.assertContains(resp_day, 'Day')
+
+        # 4. Specific date view
+        target_str = '2026-11-15'
+        resp_specific = client.get(f'/manage/calendar/?view=day&date={target_str}')
+        self.assertEqual(resp_specific.status_code, 200)
+        self.assertEqual(resp_specific.context['curr_date'].strftime('%Y-%m-%d'), target_str)
+        self.assertContains(resp_specific, 'November 15, 2026')
+
 

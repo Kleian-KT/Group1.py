@@ -2,6 +2,7 @@ import datetime
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from facilities.models import Facility, FacilityCategory, Amenity, FacilityAmenity, FacilityOperatingHour
 from facilities.forms import (
@@ -139,3 +140,12 @@ class FacilityFormsAndViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Valencia Test Hall')
         self.assertContains(response, 'Configure Day Operating Hours')
+
+    def test_user_facility_list_reflects_local_today_date(self):
+        """Verify user facility list displays timezone.localdate() instead of UTC date."""
+        self.client.login(username='admin_fac', password='Password123!')
+        response = self.client.get(reverse('user_facility_list'))
+        self.assertEqual(response.status_code, 200)
+        expected_today = timezone.localdate()
+        self.assertEqual(response.context['today'], expected_today)
+        self.assertContains(response, expected_today.strftime('%b %d, %Y'))
